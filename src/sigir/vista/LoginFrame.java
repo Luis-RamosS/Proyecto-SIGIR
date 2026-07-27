@@ -32,6 +32,12 @@ import sigir.componentes.PanelTarjeta;
 import sigir.componentes.RoundedBorder;
 import sigir.util.Colores;
 
+import java.sql.SQLException;
+import java.util.Arrays;
+import sigir.dao.UsuarioDAO;
+import sigir.modelo.Usuario;
+import sigir.util.Sesion;
+
 public class LoginFrame extends JFrame {
 
     private static final String PLACEHOLDER_USUARIO = "Ingresa tu usuario";
@@ -367,43 +373,84 @@ public class LoginFrame extends JFrame {
     }
 
     private void iniciarSesion() {
-        String usuario = usuarioPlaceholderActivo
+
+        String nombreUsuario = usuarioPlaceholderActivo
                 ? ""
                 : txtUsuario.getText().trim();
 
-        String password = passwordPlaceholderActivo
-                ? ""
-                : new String(txtPassword.getPassword());
+        char[] contrasena = passwordPlaceholderActivo
+                ? new char[0]
+                : txtPassword.getPassword();
 
-        if (usuario.isBlank() || password.isBlank()) {
+        if (nombreUsuario.isBlank()
+                || contrasena.length == 0) {
+
             JOptionPane.showMessageDialog(
                     this,
                     "Ingresa el usuario y la contraseña.",
                     "Campos incompletos",
                     JOptionPane.WARNING_MESSAGE
             );
+
+            Arrays.fill(contrasena, '\0');
             return;
         }
 
-        if (usuario.equals("admin") && password.equals("admin123")) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Inicio de sesión correcto.",
-                    "SIGIR",
-                    JOptionPane.INFORMATION_MESSAGE
+        try {
+            UsuarioDAO usuarioDAO = new UsuarioDAO();
+
+            Usuario usuarioAutenticado
+                    = usuarioDAO.iniciarSesion(
+                            nombreUsuario,
+                            contrasena
+                    );
+
+            if (usuarioAutenticado == null) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Usuario o contraseña incorrectos.",
+                        "Acceso denegado",
+                        JOptionPane.ERROR_MESSAGE
+                );
+
+                txtPassword.setText("");
+                txtPassword.requestFocusInWindow();
+                return;
+            }
+
+            Sesion.iniciar(usuarioAutenticado);
+
+            FrmInicio inicio = new FrmInicio(
+                    usuarioAutenticado.getNombreCompleto()
             );
 
-            // En el siguiente paso se abrirá PrincipalFrame.
-            // new PrincipalFrame().setVisible(true);
-            // dispose();
-        } else {
+            inicio.setVisible(true);
+            dispose();
+
+        } catch (IllegalStateException ex) {
+
             JOptionPane.showMessageDialog(
                     this,
-                    "Usuario o contraseña incorrectos.\n"
-                    + "Prueba con admin / admin123",
-                    "Acceso denegado",
+                    ex.getMessage(),
+                    "Acceso no permitido",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+        } catch (SQLException ex) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No fue posible consultar la base de datos.\n"
+                    + ex.getMessage(),
+                    "Error de conexión",
                     JOptionPane.ERROR_MESSAGE
             );
+
+            ex.printStackTrace();
+
+        } finally {
+            Arrays.fill(contrasena, '\0');
         }
     }
 }
