@@ -294,13 +294,17 @@ public class LoginFrame extends JFrame {
         lblOlvido.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                JOptionPane.showMessageDialog(
-                        LoginFrame.this,
-                        "La recuperación de contraseña se conectará "
-                        + "más adelante con la base de datos.",
-                        "Recuperar contraseña",
-                        JOptionPane.INFORMATION_MESSAGE
+
+                FrmRecuperarContrasena formularioRecuperacion
+                        = new FrmRecuperarContrasena(LoginFrame.this);
+
+                formularioRecuperacion.setLocationRelativeTo(
+                        LoginFrame.this
                 );
+
+                formularioRecuperacion.setVisible(true);
+
+                LoginFrame.this.setVisible(false);
             }
         });
 

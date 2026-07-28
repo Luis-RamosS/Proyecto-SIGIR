@@ -13,6 +13,10 @@ import sigir.util.Sesion;
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import sigir.vista.paneles.ProductosPanel;
+import sigir.vista.paneles.ClientesPanel;
+import sigir.vista.paneles.ProveedoresPanel;
+import sigir.vista.paneles.ComprasPanel;
+import sigir.vista.paneles.InventarioPanel;
 
 /**
  * Pantalla de inicio de SIGIR creada como JFrame Form de NetBeans.
@@ -22,7 +26,11 @@ public class FrmInicio extends javax.swing.JFrame {
 
     private JComponent panelActual;
     private ProductosPanel productosPanel;
-
+    private ClientesPanel clientesPanel;
+    private ProveedoresPanel proveedoresPanel;
+    private ComprasPanel comprasPanel;
+    private InventarioPanel inventarioPanel;
+    
     public FrmInicio() {
 
         initComponents();    
@@ -48,6 +56,9 @@ public class FrmInicio extends javax.swing.JFrame {
         }
         configurarVentana();
         aplicarEstilos();
+        
+        configurarBotonCerrarSesion();
+        
         cargarDatos();
         configurarNavegacion();
         configurarPermisos();
@@ -60,6 +71,75 @@ public class FrmInicio extends javax.swing.JFrame {
     private void configurarVentana() {
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
+    }
+    private void configurarBotonCerrarSesion() {
+
+        final String textoNormal = "Cerrar sesión";
+        final String textoSubrayado
+                = "<html><u>Cerrar sesión</u></html>";
+
+        final java.awt.Color rojoNormal
+                = new java.awt.Color(210, 45, 45);
+
+        final java.awt.Color rojoHover
+                = new java.awt.Color(160, 25, 25);
+
+        btnCerrarSesion.setText(textoNormal);
+        btnCerrarSesion.setForeground(rojoNormal);
+
+        // Fondo transparente
+        btnCerrarSesion.setOpaque(false);
+        btnCerrarSesion.setContentAreaFilled(false);
+
+        // Sin borde ni cuadro al presionarlo
+        btnCerrarSesion.setBorderPainted(false);
+        btnCerrarSesion.setFocusPainted(false);
+
+        btnCerrarSesion.setCursor(
+                java.awt.Cursor.getPredefinedCursor(
+                        java.awt.Cursor.HAND_CURSOR
+                )
+        );
+
+        btnCerrarSesion.addMouseListener(
+                new java.awt.event.MouseAdapter() {
+
+            @Override
+            public void mouseEntered(
+                    java.awt.event.MouseEvent evt) {
+
+                btnCerrarSesion.setForeground(rojoHover);
+                btnCerrarSesion.setText(textoSubrayado);
+            }
+
+            @Override
+            public void mouseExited(
+                    java.awt.event.MouseEvent evt) {
+
+                btnCerrarSesion.setForeground(rojoNormal);
+                btnCerrarSesion.setText(textoNormal);
+            }
+
+            @Override
+            public void mousePressed(
+                    java.awt.event.MouseEvent evt) {
+
+                btnCerrarSesion.setForeground(
+                        new java.awt.Color(120, 15, 15)
+                );
+            }
+
+            @Override
+            public void mouseReleased(
+                    java.awt.event.MouseEvent evt) {
+
+                if (btnCerrarSesion.contains(evt.getPoint())) {
+                    btnCerrarSesion.setForeground(rojoHover);
+                } else {
+                    btnCerrarSesion.setForeground(rojoNormal);
+                }
+            }
+        });
     }
     private void configurarPermisos() {
 
@@ -222,21 +302,49 @@ public class FrmInicio extends javax.swing.JFrame {
             e -> abrirModulo("Ventas")
     );
 
-    btnCompras.addActionListener(
-            e -> abrirModulo("Compras")
-    );
+        btnCompras.addActionListener(e -> {
 
-    btnInventario.addActionListener(
-            e -> abrirModulo("Inventario")
-    );
+            if (comprasPanel == null) {
+                comprasPanel = new ComprasPanel();
+            } else {
+                comprasPanel.recargar();
+            }
 
-    btnClientes.addActionListener(
-            e -> abrirModulo("Clientes")
-    );
+            mostrarPanel(comprasPanel);
+        });
 
-    btnProveedores.addActionListener(
-            e -> abrirModulo("Proveedores")
-    );
+        btnInventario.addActionListener(e -> {
+
+            if (inventarioPanel == null) {
+                inventarioPanel = new InventarioPanel();
+            } else {
+                inventarioPanel.recargar();
+            }
+
+            mostrarPanel(inventarioPanel);
+        });
+
+        btnClientes.addActionListener(e -> {
+
+            if (clientesPanel == null) {
+                clientesPanel = new ClientesPanel();
+            } else {
+                clientesPanel.recargar();
+            }
+
+            mostrarPanel(clientesPanel);
+        });
+
+        btnProveedores.addActionListener(e -> {
+
+            if (proveedoresPanel == null) {
+                proveedoresPanel = new ProveedoresPanel();
+            } else {
+                proveedoresPanel.recargar();
+            }
+
+            mostrarPanel(proveedoresPanel);
+        });
 
     btnCreditos.addActionListener(
             e -> abrirModulo("Créditos")
@@ -268,12 +376,38 @@ public class FrmInicio extends javax.swing.JFrame {
         );
     }
 
+    
+    private void cerrarSesion() {
+
+    int respuesta =
+            javax.swing.JOptionPane.showConfirmDialog(
+                    this,
+                    "¿Deseas cerrar la sesión actual?",
+                    "Cerrar sesión",
+                    javax.swing.JOptionPane.YES_NO_OPTION,
+                    javax.swing.JOptionPane.QUESTION_MESSAGE
+            );
+
+    if (respuesta
+            != javax.swing.JOptionPane.YES_OPTION) {
+
+        return;
+    }
+
+    Sesion.cerrar();
+
+    LoginFrame login = new LoginFrame();
+    login.setVisible(true);
+
+    dispose();
+}
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlMenu = new javax.swing.JPanel();
         lblMarca = new javax.swing.JLabel();
+        btnCerrarSesion = new javax.swing.JButton();
         lblSubMarca = new javax.swing.JLabel();
         btnInicio = new javax.swing.JButton();
         btnVentas = new javax.swing.JButton();
@@ -286,8 +420,8 @@ public class FrmInicio extends javax.swing.JFrame {
         btnReparaciones = new javax.swing.JButton();
         btnUsuarios = new javax.swing.JButton();
         btnReportes = new javax.swing.JButton();
-        btnConfiguracion = new javax.swing.JButton();
         lblVersion = new javax.swing.JLabel();
+        btnConfiguracion = new javax.swing.JButton();
         pnlDerecha = new javax.swing.JPanel();
         pnlBarraSuperior = new javax.swing.JPanel();
         txtBuscar = new javax.swing.JTextField();
@@ -367,6 +501,18 @@ public class FrmInicio extends javax.swing.JFrame {
         pnlMenu.add(lblMarca);
         lblMarca.setBounds(28, 24, 180, 44);
 
+        btnCerrarSesion.setBackground(new java.awt.Color(204, 0, 0));
+        btnCerrarSesion.setForeground(new java.awt.Color(255, 255, 255));
+        btnCerrarSesion.setText("Cerrar Sesión");
+        btnCerrarSesion.setToolTipText("Cerrar la sesión actual");
+        btnCerrarSesion.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCerrarSesionActionPerformed(evt);
+            }
+        });
+        pnlMenu.add(btnCerrarSesion);
+        btnCerrarSesion.setBounds(20, 690, 210, 50);
+
         lblSubMarca.setFont(new java.awt.Font("Segoe UI", 0, 11)); // NOI18N
         lblSubMarca.setForeground(new java.awt.Color(75, 108, 151));
         lblSubMarca.setText("Sistema de Gestión de Inventario");
@@ -440,17 +586,17 @@ public class FrmInicio extends javax.swing.JFrame {
         pnlMenu.add(btnReportes);
         btnReportes.setBounds(16, 592, 218, 44);
 
-        btnConfiguracion.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
-        btnConfiguracion.setForeground(new java.awt.Color(49, 85, 132));
-        btnConfiguracion.setText("⚙   Configuración");
-        pnlMenu.add(btnConfiguracion);
-        btnConfiguracion.setBounds(16, 640, 218, 44);
-
         lblVersion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblVersion.setForeground(new java.awt.Color(65, 98, 143));
         lblVersion.setText("◉   SIGIR v1.0.0");
         pnlMenu.add(lblVersion);
-        lblVersion.setBounds(28, 724, 150, 24);
+        lblVersion.setBounds(30, 790, 150, 24);
+
+        btnConfiguracion.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        btnConfiguracion.setForeground(new java.awt.Color(49, 85, 132));
+        btnConfiguracion.setText("⚙   Configuración ");
+        pnlMenu.add(btnConfiguracion);
+        btnConfiguracion.setBounds(16, 640, 218, 44);
 
         getContentPane().add(pnlMenu, java.awt.BorderLayout.WEST);
 
@@ -810,6 +956,10 @@ public class FrmInicio extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnCerrarSesionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarSesionActionPerformed
+        cerrarSesion();
+    }//GEN-LAST:event_btnCerrarSesionActionPerformed
+
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(() -> {
             new FrmInicio("admin").setVisible(true);
@@ -817,6 +967,7 @@ public class FrmInicio extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnCerrarSesion;
     private javax.swing.JButton btnClientes;
     private javax.swing.JButton btnCompras;
     private javax.swing.JButton btnConfiguracion;

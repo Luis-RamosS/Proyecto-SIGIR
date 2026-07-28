@@ -143,4 +143,20 @@ public class Producto {
     public void setFechaRegistro(LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
     }
+    
+    @Override
+    public String toString() {
+
+        String codigoMostrar
+                = codigo == null || codigo.isBlank()
+                ? ""
+                : codigo + " - ";
+
+        String nombreMostrar
+                = nombre == null
+                        ? ""
+                        : nombre;
+
+        return codigoMostrar + nombreMostrar;
+    }
 }
