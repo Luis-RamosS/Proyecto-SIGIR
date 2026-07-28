@@ -10,6 +10,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import sigir.util.Sesion;
+import java.awt.BorderLayout;
+import javax.swing.JComponent;
+import sigir.vista.paneles.ProductosPanel;
 
 /**
  * Pantalla de inicio de SIGIR creada como JFrame Form de NetBeans.
@@ -17,11 +20,15 @@ import sigir.util.Sesion;
  */
 public class FrmInicio extends javax.swing.JFrame {
 
-    private String usuarioActual = "admin";
+    private JComponent panelActual;
+    private ProductosPanel productosPanel;
 
     public FrmInicio() {
 
-        initComponents();        
+        initComponents();    
+        
+        panelActual = pnlContenido;
+        
         if (Sesion.haySesionActiva()) {
 
             lblNombreUsuario.setText(
@@ -43,6 +50,7 @@ public class FrmInicio extends javax.swing.JFrame {
         aplicarEstilos();
         cargarDatos();
         configurarNavegacion();
+        configurarPermisos();
     }
 
     public FrmInicio(String usuario) {
@@ -53,7 +61,36 @@ public class FrmInicio extends javax.swing.JFrame {
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
     }
+    private void configurarPermisos() {
 
+        if (!Sesion.haySesionActiva()) {
+            return;
+        }
+
+        boolean esDueno = Sesion.esDueno();
+
+        /*
+     * Cambia btnUsuarios por el nombre real del botón
+     * que abre el módulo de usuarios.
+         */
+        btnUsuarios.setVisible(esDueno);
+    }
+    private void mostrarPanel(JComponent nuevoPanel) {
+
+    if (panelActual != null) {
+        pnlDerecha.remove(panelActual);
+    }
+
+    panelActual = nuevoPanel;
+
+    pnlDerecha.add(
+            panelActual,
+            BorderLayout.CENTER
+    );
+
+    pnlDerecha.revalidate();
+    pnlDerecha.repaint();
+}
     private void aplicarEstilos() {
         Color borde = new Color(222, 228, 236);
         Color azul = new Color(64, 108, 163);
@@ -165,18 +202,62 @@ public class FrmInicio extends javax.swing.JFrame {
     }
 
     private void configurarNavegacion() {
-        btnVentas.addActionListener(e -> abrirModulo("Ventas"));
-        btnCompras.addActionListener(e -> abrirModulo("Compras"));
-        btnProductos.addActionListener(e -> abrirModulo("Productos"));
-        btnInventario.addActionListener(e -> abrirModulo("Inventario"));
-        btnClientes.addActionListener(e -> abrirModulo("Clientes"));
-        btnProveedores.addActionListener(e -> abrirModulo("Proveedores"));
-        btnCreditos.addActionListener(e -> abrirModulo("Créditos"));
-        btnReparaciones.addActionListener(e -> abrirModulo("Reparaciones"));
-        btnUsuarios.addActionListener(e -> abrirModulo("Usuarios"));
-        btnReportes.addActionListener(e -> abrirModulo("Reportes"));
-        btnConfiguracion.addActionListener(e -> abrirModulo("Configuración"));
-    }
+
+    btnInicio.addActionListener(
+            e -> mostrarPanel(pnlContenido)
+    );
+
+    btnProductos.addActionListener(e -> {
+
+        if (productosPanel == null) {
+            productosPanel = new ProductosPanel();
+        } else {
+            productosPanel.recargar();
+        }
+
+        mostrarPanel(productosPanel);
+    });
+
+    btnVentas.addActionListener(
+            e -> abrirModulo("Ventas")
+    );
+
+    btnCompras.addActionListener(
+            e -> abrirModulo("Compras")
+    );
+
+    btnInventario.addActionListener(
+            e -> abrirModulo("Inventario")
+    );
+
+    btnClientes.addActionListener(
+            e -> abrirModulo("Clientes")
+    );
+
+    btnProveedores.addActionListener(
+            e -> abrirModulo("Proveedores")
+    );
+
+    btnCreditos.addActionListener(
+            e -> abrirModulo("Créditos")
+    );
+
+    btnReparaciones.addActionListener(
+            e -> abrirModulo("Reparaciones")
+    );
+
+    btnUsuarios.addActionListener(
+            e -> abrirModulo("Usuarios")
+    );
+
+    btnReportes.addActionListener(
+            e -> abrirModulo("Reportes")
+    );
+
+    btnConfiguracion.addActionListener(
+            e -> abrirModulo("Configuración")
+    );
+}
 
     private void abrirModulo(String modulo) {
         JOptionPane.showMessageDialog(
