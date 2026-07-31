@@ -6,18 +6,22 @@ import java.sql.SQLException;
 
 public final class ConexionBD {
 
-    private static final String URL =
-            "jdbc:sqlserver://localhost:1433;"
+    private static final String URL
+            = "jdbc:sqlserver://192.168.1.205:1433;"
             + "databaseName=SIGIR;"
-            + "integratedSecurity=true;"
-            + "authenticationScheme=NativeAuthentication;"
             + "encrypt=true;"
             + "trustServerCertificate=true;";
+
+    private static final String USUARIO
+            = "sigir_app";
+
+    private static final String CONTRASENA
+            = "SigirApp#2026_Segura";
 
     private ConexionBD() {
     }
 
     public static Connection obtenerConexion() throws SQLException {
-        return DriverManager.getConnection(URL);
+        return DriverManager.getConnection(URL,USUARIO,CONTRASENA);
     }
 }
