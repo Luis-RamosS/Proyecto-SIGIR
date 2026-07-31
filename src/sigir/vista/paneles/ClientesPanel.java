@@ -14,6 +14,7 @@ import javax.swing.table.JTableHeader;
 import sigir.controlador.ClienteControlador;
 import sigir.modelo.Cliente;
 import sigir.modelo.TipoCliente;
+import sigir.util.FiltroTiempoReal;
 
 public class ClientesPanel extends javax.swing.JPanel {
 
@@ -23,9 +24,17 @@ public class ClientesPanel extends javax.swing.JPanel {
         initComponents();
         configurarComponentes();
         aplicarEstilos();
-        configurarEventos();
+        
 
         controlador = new ClienteControlador(this);
+        
+        configurarEventos();
+        
+        FiltroTiempoReal.activar(
+            txtBuscar,
+            controlador::buscar
+        );
+        
         controlador.iniciar();
     }
 
@@ -106,7 +115,7 @@ public class ClientesPanel extends javax.swing.JPanel {
             btnGuardar,
             btnCambiarEstado,
             btnActualizar,
-            btnBuscar
+            
         };
 
         for (javax.swing.JButton boton : botones) {
@@ -158,11 +167,7 @@ public class ClientesPanel extends javax.swing.JPanel {
                 )
         );
 
-        btnBuscar.setBackground(Color.WHITE);
-        btnBuscar.setForeground(texto);
-        btnBuscar.setBorder(
-                BorderFactory.createLineBorder(borde)
-        );
+        
 
         estilizarTabla();
     }
@@ -215,9 +220,7 @@ public class ClientesPanel extends javax.swing.JPanel {
         btnActualizar.addActionListener(
                 e -> controlador.recargar()
         );
-        btnBuscar.addActionListener(e -> controlador.buscar());
-
-        txtBuscar.addActionListener(e -> controlador.buscar());
+        
 
         cmbFiltroTipo.addActionListener(e -> {
             if (cmbFiltroTipo.getItemCount() > 0) {
@@ -675,7 +678,6 @@ public class ClientesPanel extends javax.swing.JPanel {
         txtBuscar = new javax.swing.JTextField();
         cmbFiltroTipo = new javax.swing.JComboBox<>();
         cmbFiltroEstado = new javax.swing.JComboBox<>();
-        btnBuscar = new javax.swing.JButton();
         scrollClientes = new javax.swing.JScrollPane();
         tblClientes = new javax.swing.JTable();
         lblCantidad = new javax.swing.JLabel();
@@ -688,13 +690,13 @@ public class ClientesPanel extends javax.swing.JPanel {
         pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
         lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
         lblTitulo.setText("Gestión de Clientes");
         pnlEncabezado.add(lblTitulo);
         lblTitulo.setBounds(0, 4, 390, 40);
 
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
         lblSubtitulo.setText("Administra la información de tus clientes.");
         pnlEncabezado.add(lblSubtitulo);
@@ -706,80 +708,79 @@ public class ClientesPanel extends javax.swing.JPanel {
         pnlInformacion.setBackground(new java.awt.Color(255, 255, 255));
         pnlInformacion.setLayout(null);
 
-        lblTituloInformacion.setFont(new java.awt.Font("Segoe UI", 1, 17));
+        lblTituloInformacion.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
         lblTituloInformacion.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloInformacion.setText("Información del nuevo cliente");
         pnlInformacion.add(lblTituloInformacion);
         lblTituloInformacion.setBounds(18, 12, 390, 28);
 
-        lblNombre.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblNombre.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblNombre.setForeground(new java.awt.Color(38, 64, 99));
         lblNombre.setText("Nombre completo");
         pnlInformacion.add(lblNombre);
         lblNombre.setBounds(18, 50, 180, 18);
 
-        txtNombre.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtNombre.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtNombre);
         txtNombre.setBounds(18, 72, 280, 38);
 
-        lblIdentidad.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblIdentidad.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblIdentidad.setForeground(new java.awt.Color(38, 64, 99));
         lblIdentidad.setText("Identidad o RTN");
         pnlInformacion.add(lblIdentidad);
         lblIdentidad.setBounds(310, 50, 180, 18);
 
-        txtIdentidad.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtIdentidad.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtIdentidad);
         txtIdentidad.setBounds(310, 72, 210, 38);
 
-        lblTelefono.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblTelefono.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTelefono.setForeground(new java.awt.Color(38, 64, 99));
         lblTelefono.setText("Teléfono");
         pnlInformacion.add(lblTelefono);
         lblTelefono.setBounds(532, 50, 150, 18);
 
-        txtTelefono.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtTelefono.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtTelefono);
         txtTelefono.setBounds(532, 72, 190, 38);
 
-        lblCorreo.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblCorreo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblCorreo.setForeground(new java.awt.Color(38, 64, 99));
         lblCorreo.setText("Correo electrónico");
         pnlInformacion.add(lblCorreo);
         lblCorreo.setBounds(18, 122, 190, 18);
 
-        txtCorreo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtCorreo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtCorreo);
         txtCorreo.setBounds(18, 144, 330, 38);
 
-        lblDireccion.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblDireccion.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblDireccion.setForeground(new java.awt.Color(38, 64, 99));
         lblDireccion.setText("Dirección");
         pnlInformacion.add(lblDireccion);
         lblDireccion.setBounds(360, 122, 180, 18);
 
-        txtDireccion.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtDireccion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtDireccion);
         txtDireccion.setBounds(360, 144, 362, 38);
 
-        lblTipoCliente.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblTipoCliente.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTipoCliente.setForeground(new java.awt.Color(38, 64, 99));
         lblTipoCliente.setText("Tipo de cliente");
         pnlInformacion.add(lblTipoCliente);
         lblTipoCliente.setBounds(18, 194, 180, 18);
 
-        cmbTipoCliente.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        cmbTipoCliente.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(cmbTipoCliente);
         cmbTipoCliente.setBounds(18, 216, 330, 38);
 
-        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblEstado.setForeground(new java.awt.Color(38, 64, 99));
         lblEstado.setText("Estado");
         pnlInformacion.add(lblEstado);
         lblEstado.setBounds(360, 194, 180, 18);
 
-        cmbEstado.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        cmbEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ACTIVO", "INACTIVO" }));
+        cmbEstado.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(cmbEstado);
         cmbEstado.setBounds(360, 216, 362, 38);
 
@@ -789,29 +790,29 @@ public class ClientesPanel extends javax.swing.JPanel {
         pnlAcciones.setBackground(new java.awt.Color(255, 255, 255));
         pnlAcciones.setLayout(null);
 
-        lblTituloAcciones.setFont(new java.awt.Font("Segoe UI", 1, 17));
+        lblTituloAcciones.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
         lblTituloAcciones.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloAcciones.setText("Acciones rápidas");
         pnlAcciones.add(lblTituloAcciones);
         lblTituloAcciones.setBounds(18, 12, 230, 28);
 
-        btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnNuevo.setText("+  Nuevo cliente");
         pnlAcciones.add(btnNuevo);
         btnNuevo.setBounds(18, 52, 294, 44);
 
-        btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnGuardar.setText("Guardar cliente");
         pnlAcciones.add(btnGuardar);
         btnGuardar.setBounds(18, 106, 294, 44);
 
-        btnCambiarEstado.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnCambiarEstado.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnCambiarEstado.setText("Desactivar cliente");
         btnCambiarEstado.setEnabled(false);
         pnlAcciones.add(btnCambiarEstado);
         btnCambiarEstado.setBounds(18, 160, 294, 44);
 
-        btnActualizar.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnActualizar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnActualizar.setText("Actualizar lista");
         pnlAcciones.add(btnActualizar);
         btnActualizar.setBounds(18, 214, 294, 44);
@@ -822,61 +823,27 @@ public class ClientesPanel extends javax.swing.JPanel {
         pnlLista.setBackground(new java.awt.Color(255, 255, 255));
         pnlLista.setLayout(null);
 
-        lblTituloLista.setFont(new java.awt.Font("Segoe UI", 1, 17));
+        lblTituloLista.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
         lblTituloLista.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloLista.setText("Lista de clientes");
         pnlLista.add(lblTituloLista);
         lblTituloLista.setBounds(18, 12, 210, 28);
 
-        txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setToolTipText("Buscar por nombre, identidad, teléfono o correo");
         pnlLista.add(txtBuscar);
         txtBuscar.setBounds(245, 8, 270, 38);
-
-        cmbFiltroTipo.setFont(new java.awt.Font("Segoe UI", 0, 12));
         pnlLista.add(cmbFiltroTipo);
         cmbFiltroTipo.setBounds(527, 8, 180, 38);
-
-        cmbFiltroEstado.setFont(new java.awt.Font("Segoe UI", 0, 12));
-        cmbFiltroEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "TODOS", "ACTIVO", "INACTIVO" }));
         pnlLista.add(cmbFiltroEstado);
         cmbFiltroEstado.setBounds(719, 8, 130, 38);
 
-        btnBuscar.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        btnBuscar.setText("Buscar");
-        pnlLista.add(btnBuscar);
-        btnBuscar.setBounds(861, 8, 100, 38);
-
-        tblClientes.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        tblClientes.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "ID", "Código", "Nombre", "Identidad / RTN", "Teléfono", "Tipo", "Correo", "Estado"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
+        tblClientes.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         scrollClientes.setViewportView(tblClientes);
 
         pnlLista.add(scrollClientes);
         scrollClientes.setBounds(0, 56, 1094, 250);
 
-        lblCantidad.setFont(new java.awt.Font("Segoe UI", 0, 12));
         lblCantidad.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidad.setText("Mostrando 0 clientes");
         pnlLista.add(lblCantidad);
@@ -888,7 +855,6 @@ public class ClientesPanel extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizar;
-    private javax.swing.JButton btnBuscar;
     private javax.swing.JButton btnCambiarEstado;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnNuevo;

@@ -22,6 +22,7 @@ import sigir.modelo.Categoria;
 import sigir.modelo.MovimientoInventario;
 import sigir.modelo.Producto;
 import sigir.modelo.ResumenInventario;
+import sigir.util.FiltroTiempoReal;
 
 public class InventarioPanel extends javax.swing.JPanel {
 
@@ -39,9 +40,20 @@ public class InventarioPanel extends javax.swing.JPanel {
         initComponents();
         configurarComponentes();
         aplicarEstilos();
-        configurarEventos();
+        
 
         controlador = new InventarioControlador(this);
+        configurarEventos();
+        
+        FiltroTiempoReal.activar(
+            txtBuscarExistencias,
+            controlador::buscarExistencias
+        );
+        
+        FiltroTiempoReal.activar(
+            txtBuscarMovimientos,
+            controlador::buscarMovimientos
+);
         controlador.iniciar();
     }
 
@@ -207,9 +219,8 @@ public class InventarioPanel extends javax.swing.JPanel {
         }
 
         javax.swing.JButton[] botonesSecundarios = {
-            btnBuscarExistencias,
+            
             btnActualizarExistencias,
-            btnBuscarMovimientos,
             btnActualizarMovimientos,
             btnLimpiarAjuste
         };
@@ -264,17 +275,13 @@ public class InventarioPanel extends javax.swing.JPanel {
     }
 
     private void configurarEventos() {
-        btnBuscarExistencias.addActionListener(
-                e -> controlador.buscarExistencias()
-        );
+        
 
         btnActualizarExistencias.addActionListener(
                 e -> controlador.actualizarTodo()
         );
 
-        txtBuscarExistencias.addActionListener(
-                e -> controlador.buscarExistencias()
-        );
+        
 
         cmbCategoria.addActionListener(e -> {
             if (cmbCategoria.getItemCount() > 0) {
@@ -288,17 +295,13 @@ public class InventarioPanel extends javax.swing.JPanel {
             }
         });
 
-        btnBuscarMovimientos.addActionListener(
-                e -> controlador.buscarMovimientos()
-        );
+        
 
         btnActualizarMovimientos.addActionListener(
                 e -> controlador.actualizarTodo()
         );
 
-        txtBuscarMovimientos.addActionListener(
-                e -> controlador.buscarMovimientos()
-        );
+        
 
         cmbTipoMovimiento.addActionListener(e -> {
             if (cmbTipoMovimiento.getItemCount() > 0) {
@@ -902,7 +905,6 @@ public class InventarioPanel extends javax.swing.JPanel {
         txtBuscarExistencias = new javax.swing.JTextField();
         cmbCategoria = new javax.swing.JComboBox<>();
         cmbNivelStock = new javax.swing.JComboBox<>();
-        btnBuscarExistencias = new javax.swing.JButton();
         btnActualizarExistencias = new javax.swing.JButton();
         pnlTablaExistencias = new javax.swing.JPanel();
         lblTituloTablaExistencias = new javax.swing.JLabel();
@@ -918,7 +920,6 @@ public class InventarioPanel extends javax.swing.JPanel {
         txtFechaDesde = new javax.swing.JTextField();
         lblFechaHasta = new javax.swing.JLabel();
         txtFechaHasta = new javax.swing.JTextField();
-        btnBuscarMovimientos = new javax.swing.JButton();
         btnActualizarMovimientos = new javax.swing.JButton();
         pnlTablaMovimientos = new javax.swing.JPanel();
         lblTituloTablaMovimientos = new javax.swing.JLabel();
@@ -955,13 +956,13 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
         lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
         lblTitulo.setText("Control de Inventario");
         pnlEncabezado.add(lblTitulo);
         lblTitulo.setBounds(0, 4, 390, 40);
 
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
         lblSubtitulo.setText("Monitorea existencias, niveles críticos y movimientos.");
         pnlEncabezado.add(lblSubtitulo);
@@ -973,17 +974,17 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlTotalProductos.setBackground(new java.awt.Color(255, 255, 255));
         pnlTotalProductos.setLayout(null);
 
-        lblTotalProductosTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblTotalProductosTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblTotalProductosTitulo.setForeground(new java.awt.Color(75, 99, 132));
         lblTotalProductosTitulo.setText("Total productos");
         pnlTotalProductos.add(lblTotalProductosTitulo);
-        lblTotalProductosTitulo.setBounds(16, 14, 150, 22);
+        lblTotalProductosTitulo.setBounds(16, 14, 170, 22);
 
-        lblTotalProductosValor.setFont(new java.awt.Font("Segoe UI", 1, 25));
+        lblTotalProductosValor.setFont(new java.awt.Font("Segoe UI", 1, 25)); // NOI18N
         lblTotalProductosValor.setForeground(new java.awt.Color(24, 50, 87));
         lblTotalProductosValor.setText("0");
         pnlTotalProductos.add(lblTotalProductosValor);
-        lblTotalProductosValor.setBounds(16, 40, 180, 36);
+        lblTotalProductosValor.setBounds(16, 40, 170, 36);
 
         add(pnlTotalProductos);
         pnlTotalProductos.setBounds(28, 92, 200, 92);
@@ -991,17 +992,17 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlStockBajo.setBackground(new java.awt.Color(255, 255, 255));
         pnlStockBajo.setLayout(null);
 
-        lblStockBajoTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblStockBajoTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblStockBajoTitulo.setForeground(new java.awt.Color(75, 99, 132));
         lblStockBajoTitulo.setText("Stock bajo");
         pnlStockBajo.add(lblStockBajoTitulo);
-        lblStockBajoTitulo.setBounds(16, 14, 150, 22);
+        lblStockBajoTitulo.setBounds(16, 14, 170, 22);
 
-        lblStockBajoValor.setFont(new java.awt.Font("Segoe UI", 1, 25));
+        lblStockBajoValor.setFont(new java.awt.Font("Segoe UI", 1, 25)); // NOI18N
         lblStockBajoValor.setForeground(new java.awt.Color(219, 127, 35));
         lblStockBajoValor.setText("0");
         pnlStockBajo.add(lblStockBajoValor);
-        lblStockBajoValor.setBounds(16, 40, 180, 36);
+        lblStockBajoValor.setBounds(16, 40, 170, 36);
 
         add(pnlStockBajo);
         pnlStockBajo.setBounds(240, 92, 200, 92);
@@ -1009,17 +1010,17 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlAgotados.setBackground(new java.awt.Color(255, 255, 255));
         pnlAgotados.setLayout(null);
 
-        lblAgotadosTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblAgotadosTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblAgotadosTitulo.setForeground(new java.awt.Color(75, 99, 132));
         lblAgotadosTitulo.setText("Agotados");
         pnlAgotados.add(lblAgotadosTitulo);
-        lblAgotadosTitulo.setBounds(16, 14, 150, 22);
+        lblAgotadosTitulo.setBounds(16, 14, 170, 22);
 
-        lblAgotadosValor.setFont(new java.awt.Font("Segoe UI", 1, 25));
+        lblAgotadosValor.setFont(new java.awt.Font("Segoe UI", 1, 25)); // NOI18N
         lblAgotadosValor.setForeground(new java.awt.Color(201, 57, 57));
         lblAgotadosValor.setText("0");
         pnlAgotados.add(lblAgotadosValor);
-        lblAgotadosValor.setBounds(16, 40, 180, 36);
+        lblAgotadosValor.setBounds(16, 40, 170, 36);
 
         add(pnlAgotados);
         pnlAgotados.setBounds(452, 92, 200, 92);
@@ -1027,17 +1028,17 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlMovimientosHoy.setBackground(new java.awt.Color(255, 255, 255));
         pnlMovimientosHoy.setLayout(null);
 
-        lblMovimientosHoyTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblMovimientosHoyTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblMovimientosHoyTitulo.setForeground(new java.awt.Color(75, 99, 132));
         lblMovimientosHoyTitulo.setText("Movimientos hoy");
         pnlMovimientosHoy.add(lblMovimientosHoyTitulo);
-        lblMovimientosHoyTitulo.setBounds(16, 14, 160, 22);
+        lblMovimientosHoyTitulo.setBounds(16, 14, 170, 22);
 
-        lblMovimientosHoyValor.setFont(new java.awt.Font("Segoe UI", 1, 25));
+        lblMovimientosHoyValor.setFont(new java.awt.Font("Segoe UI", 1, 25)); // NOI18N
         lblMovimientosHoyValor.setForeground(new java.awt.Color(101, 66, 188));
         lblMovimientosHoyValor.setText("0");
         pnlMovimientosHoy.add(lblMovimientosHoyValor);
-        lblMovimientosHoyValor.setBounds(16, 40, 180, 36);
+        lblMovimientosHoyValor.setBounds(16, 40, 170, 36);
 
         add(pnlMovimientosHoy);
         pnlMovimientosHoy.setBounds(664, 92, 200, 92);
@@ -1045,22 +1046,22 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlValorInventario.setBackground(new java.awt.Color(255, 255, 255));
         pnlValorInventario.setLayout(null);
 
-        lblValorInventarioTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblValorInventarioTitulo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblValorInventarioTitulo.setForeground(new java.awt.Color(75, 99, 132));
         lblValorInventarioTitulo.setText("Valor del inventario");
         pnlValorInventario.add(lblValorInventarioTitulo);
-        lblValorInventarioTitulo.setBounds(16, 14, 180, 22);
+        lblValorInventarioTitulo.setBounds(16, 14, 220, 22);
 
-        lblValorInventarioValor.setFont(new java.awt.Font("Segoe UI", 1, 20));
+        lblValorInventarioValor.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
         lblValorInventarioValor.setForeground(new java.awt.Color(32, 137, 82));
         lblValorInventarioValor.setText("L 0.00");
         pnlValorInventario.add(lblValorInventarioValor);
-        lblValorInventarioValor.setBounds(16, 42, 220, 34);
+        lblValorInventarioValor.setBounds(16, 40, 220, 36);
 
         add(pnlValorInventario);
         pnlValorInventario.setBounds(876, 92, 250, 92);
 
-        tabsInventario.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        tabsInventario.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
 
         pnlExistencias.setBackground(new java.awt.Color(247, 249, 252));
         pnlExistencias.setLayout(null);
@@ -1068,31 +1069,21 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlFiltrosExistencias.setBackground(new java.awt.Color(255, 255, 255));
         pnlFiltrosExistencias.setLayout(null);
 
-        lblTituloFiltrosExistencias.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloFiltrosExistencias.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloFiltrosExistencias.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloFiltrosExistencias.setText("Filtros de existencias");
         pnlFiltrosExistencias.add(lblTituloFiltrosExistencias);
         lblTituloFiltrosExistencias.setBounds(16, 10, 230, 26);
 
-        txtBuscarExistencias.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        txtBuscarExistencias.setToolTipText("Código, producto, marca, modelo o categoría");
+        txtBuscarExistencias.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFiltrosExistencias.add(txtBuscarExistencias);
         txtBuscarExistencias.setBounds(16, 45, 300, 38);
-
-        cmbCategoria.setFont(new java.awt.Font("Segoe UI", 0, 12));
         pnlFiltrosExistencias.add(cmbCategoria);
         cmbCategoria.setBounds(328, 45, 205, 38);
-
-        cmbNivelStock.setFont(new java.awt.Font("Segoe UI", 0, 12));
         pnlFiltrosExistencias.add(cmbNivelStock);
         cmbNivelStock.setBounds(545, 45, 170, 38);
 
-        btnBuscarExistencias.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        btnBuscarExistencias.setText("Buscar");
-        pnlFiltrosExistencias.add(btnBuscarExistencias);
-        btnBuscarExistencias.setBounds(727, 45, 100, 38);
-
-        btnActualizarExistencias.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        btnActualizarExistencias.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnActualizarExistencias.setText("Actualizar");
         pnlFiltrosExistencias.add(btnActualizarExistencias);
         btnActualizarExistencias.setBounds(839, 45, 110, 38);
@@ -1103,35 +1094,18 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlTablaExistencias.setBackground(new java.awt.Color(255, 255, 255));
         pnlTablaExistencias.setLayout(null);
 
-        lblTituloTablaExistencias.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloTablaExistencias.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloTablaExistencias.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloTablaExistencias.setText("Existencias actuales");
         pnlTablaExistencias.add(lblTituloTablaExistencias);
         lblTituloTablaExistencias.setBounds(16, 10, 220, 26);
 
-        tblExistencias.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        tblExistencias.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "Código", "Producto", "Categoría", "Marca", "Stock actual", "Stock mínimo", "Costo", "Estado de stock"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
-            };
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
+        tblExistencias.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         scrollExistencias.setViewportView(tblExistencias);
 
         pnlTablaExistencias.add(scrollExistencias);
         scrollExistencias.setBounds(0, 42, 1080, 400);
 
-        lblCantidadProductos.setFont(new java.awt.Font("Segoe UI", 0, 12));
         lblCantidadProductos.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidadProductos.setText("Mostrando 0 productos");
         pnlTablaExistencias.add(lblCantidadProductos);
@@ -1140,7 +1114,7 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlExistencias.add(pnlTablaExistencias);
         pnlTablaExistencias.setBounds(0, 120, 1080, 485);
 
-        tabsInventario.addTab("Existencias", pnlExistencias);
+        tabsInventario.addTab("tab1", pnlExistencias);
 
         pnlMovimientos.setBackground(new java.awt.Color(247, 249, 252));
         pnlMovimientos.setLayout(null);
@@ -1148,47 +1122,35 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlFiltrosMovimientos.setBackground(new java.awt.Color(255, 255, 255));
         pnlFiltrosMovimientos.setLayout(null);
 
-        lblTituloFiltrosMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloFiltrosMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloFiltrosMovimientos.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloFiltrosMovimientos.setText("Filtros de movimientos");
         pnlFiltrosMovimientos.add(lblTituloFiltrosMovimientos);
         lblTituloFiltrosMovimientos.setBounds(16, 10, 250, 26);
 
-        txtBuscarMovimientos.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        txtBuscarMovimientos.setToolTipText("Producto, usuario o motivo");
+        txtBuscarMovimientos.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFiltrosMovimientos.add(txtBuscarMovimientos);
         txtBuscarMovimientos.setBounds(16, 47, 250, 38);
-
-        cmbTipoMovimiento.setFont(new java.awt.Font("Segoe UI", 0, 12));
         pnlFiltrosMovimientos.add(cmbTipoMovimiento);
         cmbTipoMovimiento.setBounds(278, 47, 205, 38);
 
-        lblFechaDesde.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblFechaDesde.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblFechaDesde.setForeground(new java.awt.Color(38, 64, 99));
         lblFechaDesde.setText("Desde");
         pnlFiltrosMovimientos.add(lblFechaDesde);
         lblFechaDesde.setBounds(495, 41, 80, 16);
-
-        txtFechaDesde.setFont(new java.awt.Font("Segoe UI", 0, 12));
         pnlFiltrosMovimientos.add(txtFechaDesde);
         txtFechaDesde.setBounds(495, 60, 125, 33);
 
-        lblFechaHasta.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblFechaHasta.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblFechaHasta.setForeground(new java.awt.Color(38, 64, 99));
         lblFechaHasta.setText("Hasta");
         pnlFiltrosMovimientos.add(lblFechaHasta);
         lblFechaHasta.setBounds(632, 41, 80, 16);
-
-        txtFechaHasta.setFont(new java.awt.Font("Segoe UI", 0, 12));
         pnlFiltrosMovimientos.add(txtFechaHasta);
         txtFechaHasta.setBounds(632, 60, 125, 33);
 
-        btnBuscarMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        btnBuscarMovimientos.setText("Buscar");
-        pnlFiltrosMovimientos.add(btnBuscarMovimientos);
-        btnBuscarMovimientos.setBounds(769, 47, 95, 38);
-
-        btnActualizarMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        btnActualizarMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnActualizarMovimientos.setText("Actualizar");
         pnlFiltrosMovimientos.add(btnActualizarMovimientos);
         btnActualizarMovimientos.setBounds(876, 47, 105, 38);
@@ -1199,35 +1161,17 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlTablaMovimientos.setBackground(new java.awt.Color(255, 255, 255));
         pnlTablaMovimientos.setLayout(null);
 
-        lblTituloTablaMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloTablaMovimientos.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloTablaMovimientos.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloTablaMovimientos.setText("Historial de movimientos");
         pnlTablaMovimientos.add(lblTituloTablaMovimientos);
         lblTituloTablaMovimientos.setBounds(16, 10, 260, 26);
 
-        tblMovimientos.setFont(new java.awt.Font("Segoe UI", 0, 12));
-        tblMovimientos.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "ID", "Fecha", "Producto", "Tipo", "Cantidad", "Stock anterior", "Stock nuevo", "Usuario", "Origen", "Motivo"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false, false, false
-            };
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
         scrollMovimientos.setViewportView(tblMovimientos);
 
         pnlTablaMovimientos.add(scrollMovimientos);
         scrollMovimientos.setBounds(0, 42, 1080, 400);
 
-        lblCantidadMovimientos.setFont(new java.awt.Font("Segoe UI", 0, 12));
         lblCantidadMovimientos.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidadMovimientos.setText("Mostrando 0 movimientos");
         pnlTablaMovimientos.add(lblCantidadMovimientos);
@@ -1236,7 +1180,7 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlMovimientos.add(pnlTablaMovimientos);
         pnlTablaMovimientos.setBounds(0, 125, 1080, 485);
 
-        tabsInventario.addTab("Movimientos", pnlMovimientos);
+        tabsInventario.addTab("tab2", pnlMovimientos);
 
         pnlAjusteManual.setBackground(new java.awt.Color(247, 249, 252));
         pnlAjusteManual.setLayout(null);
@@ -1244,65 +1188,63 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlFormularioAjuste.setBackground(new java.awt.Color(255, 255, 255));
         pnlFormularioAjuste.setLayout(null);
 
-        lblTituloAjuste.setFont(new java.awt.Font("Segoe UI", 1, 18));
+        lblTituloAjuste.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         lblTituloAjuste.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloAjuste.setText("Registrar ajuste manual");
         pnlFormularioAjuste.add(lblTituloAjuste);
         lblTituloAjuste.setBounds(18, 14, 300, 30);
 
-        lblProductoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblProductoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblProductoAjuste.setForeground(new java.awt.Color(38, 64, 99));
         lblProductoAjuste.setText("Producto");
         pnlFormularioAjuste.add(lblProductoAjuste);
         lblProductoAjuste.setBounds(18, 58, 160, 18);
 
-        cmbProductoAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        cmbProductoAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFormularioAjuste.add(cmbProductoAjuste);
         cmbProductoAjuste.setBounds(18, 80, 480, 38);
 
-        lblTipoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblTipoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTipoAjuste.setForeground(new java.awt.Color(38, 64, 99));
         lblTipoAjuste.setText("Tipo de ajuste");
         pnlFormularioAjuste.add(lblTipoAjuste);
         lblTipoAjuste.setBounds(18, 132, 160, 18);
 
-        cmbTipoAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        cmbTipoAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFormularioAjuste.add(cmbTipoAjuste);
         cmbTipoAjuste.setBounds(18, 154, 225, 38);
 
-        lblCantidadAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblCantidadAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblCantidadAjuste.setForeground(new java.awt.Color(38, 64, 99));
         lblCantidadAjuste.setText("Cantidad");
         pnlFormularioAjuste.add(lblCantidadAjuste);
         lblCantidadAjuste.setBounds(255, 132, 100, 18);
 
-        txtCantidadAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        txtCantidadAjuste.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtCantidadAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtCantidadAjuste.setText("1");
         pnlFormularioAjuste.add(txtCantidadAjuste);
         txtCantidadAjuste.setBounds(255, 154, 110, 38);
 
-        lblStockActualAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblStockActualAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblStockActualAjuste.setForeground(new java.awt.Color(38, 64, 99));
         lblStockActualAjuste.setText("Stock actual");
         pnlFormularioAjuste.add(lblStockActualAjuste);
         lblStockActualAjuste.setBounds(377, 132, 110, 18);
 
         txtStockActualAjuste.setBackground(new java.awt.Color(244, 247, 251));
-        txtStockActualAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        txtStockActualAjuste.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        txtStockActualAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtStockActualAjuste.setText("0");
         pnlFormularioAjuste.add(txtStockActualAjuste);
         txtStockActualAjuste.setBounds(377, 154, 121, 38);
 
-        lblMotivoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblMotivoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblMotivoAjuste.setForeground(new java.awt.Color(38, 64, 99));
         lblMotivoAjuste.setText("Motivo obligatorio");
         pnlFormularioAjuste.add(lblMotivoAjuste);
         lblMotivoAjuste.setBounds(18, 208, 180, 18);
 
+        txtMotivoAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtMotivoAjuste.setColumns(20);
-        txtMotivoAjuste.setFont(new java.awt.Font("Segoe UI", 0, 13));
         txtMotivoAjuste.setLineWrap(true);
         txtMotivoAjuste.setRows(5);
         txtMotivoAjuste.setWrapStyleWord(true);
@@ -1311,18 +1253,17 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlFormularioAjuste.add(scrollMotivoAjuste);
         scrollMotivoAjuste.setBounds(18, 230, 480, 115);
 
-        lblAvisoSerieAjuste.setFont(new java.awt.Font("Segoe UI", 0, 12));
         lblAvisoSerieAjuste.setForeground(new java.awt.Color(176, 106, 20));
         lblAvisoSerieAjuste.setText("Selecciona un producto para ver sus datos.");
         pnlFormularioAjuste.add(lblAvisoSerieAjuste);
         lblAvisoSerieAjuste.setBounds(18, 354, 480, 24);
 
-        btnLimpiarAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        btnLimpiarAjuste.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnLimpiarAjuste.setText("Limpiar");
         pnlFormularioAjuste.add(btnLimpiarAjuste);
         btnLimpiarAjuste.setBounds(18, 397, 145, 42);
 
-        btnRegistrarAjuste.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnRegistrarAjuste.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnRegistrarAjuste.setText("Registrar ajuste");
         pnlFormularioAjuste.add(btnRegistrarAjuste);
         btnRegistrarAjuste.setBounds(175, 397, 323, 42);
@@ -1333,28 +1274,28 @@ public class InventarioPanel extends javax.swing.JPanel {
         pnlAvisoAjuste.setBackground(new java.awt.Color(255, 255, 255));
         pnlAvisoAjuste.setLayout(null);
 
-        lblTituloSeguridad.setFont(new java.awt.Font("Segoe UI", 1, 19));
+        lblTituloSeguridad.setFont(new java.awt.Font("Segoe UI", 1, 19)); // NOI18N
         lblTituloSeguridad.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloSeguridad.setText("Seguridad de los ajustes");
         pnlAvisoAjuste.add(lblTituloSeguridad);
         lblTituloSeguridad.setBounds(22, 22, 330, 30);
 
-        lblPermisoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        lblPermisoAjuste.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         lblPermisoAjuste.setForeground(new java.awt.Color(49, 105, 181));
         lblPermisoAjuste.setText("Solo el dueño puede realizar ajustes.");
         pnlAvisoAjuste.add(lblPermisoAjuste);
         lblPermisoAjuste.setBounds(22, 72, 440, 28);
 
-        lblDescripcionSeguridad.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        lblDescripcionSeguridad.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblDescripcionSeguridad.setForeground(new java.awt.Color(75, 99, 132));
-        lblDescripcionSeguridad.setText("<html>Todo ajuste queda guardado en el historial con el usuario, la fecha, el stock anterior, el stock nuevo y el motivo. Las salidas que producirían stock negativo se bloquean automáticamente.<br><br>Los productos con números de serie no permiten ajustes manuales para evitar inconsistencias entre las existencias y las unidades individuales.</html>");
+        lblDescripcionSeguridad.setText("<html>Todo ajuste queda guardado con usuario, fecha, stock anterior, stock nuevo y motivo.<br><br>Las salidas que producirían stock negativo se bloquean. Los productos con número de serie no admiten ajustes manuales.</html>");
         pnlAvisoAjuste.add(lblDescripcionSeguridad);
         lblDescripcionSeguridad.setBounds(22, 118, 440, 200);
 
         pnlAjusteManual.add(pnlAvisoAjuste);
         pnlAvisoAjuste.setBounds(580, 28, 480, 350);
 
-        tabsInventario.addTab("Ajuste manual", pnlAjusteManual);
+        tabsInventario.addTab("tab3", pnlAjusteManual);
 
         add(tabsInventario);
         tabsInventario.setBounds(28, 198, 1100, 650);
@@ -1363,8 +1304,6 @@ public class InventarioPanel extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizarExistencias;
     private javax.swing.JButton btnActualizarMovimientos;
-    private javax.swing.JButton btnBuscarExistencias;
-    private javax.swing.JButton btnBuscarMovimientos;
     private javax.swing.JButton btnLimpiarAjuste;
     private javax.swing.JButton btnRegistrarAjuste;
     private javax.swing.JComboBox<Categoria> cmbCategoria;
@@ -1404,6 +1343,7 @@ public class InventarioPanel extends javax.swing.JPanel {
     private javax.swing.JLabel lblValorInventarioValor;
     private javax.swing.JPanel pnlAgotados;
     private javax.swing.JPanel pnlAjusteManual;
+    private javax.swing.JPanel pnlAvisoAjuste;
     private javax.swing.JPanel pnlEncabezado;
     private javax.swing.JPanel pnlExistencias;
     private javax.swing.JPanel pnlFiltrosExistencias;
@@ -1416,7 +1356,6 @@ public class InventarioPanel extends javax.swing.JPanel {
     private javax.swing.JPanel pnlTablaMovimientos;
     private javax.swing.JPanel pnlTotalProductos;
     private javax.swing.JPanel pnlValorInventario;
-    private javax.swing.JPanel pnlAvisoAjuste;
     private javax.swing.JScrollPane scrollExistencias;
     private javax.swing.JScrollPane scrollMotivoAjuste;
     private javax.swing.JScrollPane scrollMovimientos;

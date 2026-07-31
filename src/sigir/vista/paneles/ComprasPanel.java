@@ -35,6 +35,7 @@ import sigir.modelo.DetalleCompra;
 import sigir.modelo.Producto;
 import sigir.modelo.Proveedor;
 import sigir.util.Sesion;
+import sigir.util.FiltroTiempoReal;
 
 public class ComprasPanel extends javax.swing.JPanel {
 
@@ -45,14 +46,20 @@ public class ComprasPanel extends javax.swing.JPanel {
             NumberFormat.getCurrencyInstance(new Locale("es", "HN"));
 
     private final CompraControlador controlador;
+    private boolean actualizandoTablaDetalle;
 
     public ComprasPanel() {
         initComponents();
         configurarComponentes();
         aplicarEstilos();
-        configurarEventos();
+        
 
         controlador = new CompraControlador(this);
+        configurarEventos();
+        FiltroTiempoReal.activar(
+                txtBuscarHistorial,
+                controlador::buscarCompras
+        );
         controlador.iniciar();
     }
 
@@ -61,6 +68,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     }
 
     private void configurarComponentes() {
+        
         formatoMoneda.setMinimumFractionDigits(2);
         formatoMoneda.setMaximumFractionDigits(2);
 
@@ -91,6 +99,23 @@ public class ComprasPanel extends javax.swing.JPanel {
         tblHistorial.setAutoCreateRowSorter(true);
         tblHistorial.setFillsViewportHeight(true);
         tabsCompras.setSelectedIndex(0);
+        
+        lblDescuento.setText(
+                "Descuento total (%)"
+        );
+
+        txtDescuento.setEditable(false);
+        txtDescuento.setFocusable(false);
+
+        txtDescuento.setBackground(
+                new java.awt.Color(
+                        244,
+                        247,
+                        251
+                )
+        );
+
+        txtDescuento.setText("0.00 %");
     }
 
     private void aplicarEstilos() {
@@ -137,7 +162,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         }
 
         javax.swing.JButton[] secundarios = {
-            btnQuitarProducto, btnNuevaCompra, btnBuscarHistorial,
+            btnQuitarProducto, btnNuevaCompra,
             btnVerDetalle, btnAnularCompra, btnActualizarHistorial
         };
 
@@ -175,11 +200,9 @@ public class ComprasPanel extends javax.swing.JPanel {
         btnQuitarProducto.addActionListener(e -> controlador.eliminarProducto());
         btnNuevaCompra.addActionListener(e -> controlador.nuevaCompra());
         btnGuardarCompra.addActionListener(e -> controlador.registrarCompra());
-        btnBuscarHistorial.addActionListener(e -> controlador.buscarCompras());
         btnActualizarHistorial.addActionListener(e -> controlador.recargar());
         btnVerDetalle.addActionListener(e -> controlador.verDetalleCompra());
         btnAnularCompra.addActionListener(e -> controlador.anularCompra());
-        txtBuscarHistorial.addActionListener(e -> controlador.buscarCompras());
 
         cmbEstadoHistorial.addActionListener(e -> {
             if (cmbEstadoHistorial.getItemCount() > 0) {
@@ -187,22 +210,7 @@ public class ComprasPanel extends javax.swing.JPanel {
             }
         });
 
-        txtDescuento.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                controlador.recalcularTotales();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                controlador.recalcularTotales();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                controlador.recalcularTotales();
-            }
-        });
+        
     }
 
     public void cargarProveedores(List<Proveedor> proveedores) {
@@ -274,10 +282,6 @@ public class ComprasPanel extends javax.swing.JPanel {
 
     public String getObservaciones() {
         return textoOpcional(txtObservaciones.getText());
-    }
-
-    public BigDecimal getDescuento() {
-        return convertirDecimal(txtDescuento.getText(), "descuento");
     }
 
     public int getCantidadProducto() {
@@ -357,46 +361,146 @@ public class ComprasPanel extends javax.swing.JPanel {
         return new ArrayList<>(series);
     }
 
-    public void mostrarDetalles(List<DetalleCompra> detalles) {
-        DefaultTableModel modelo = new DefaultTableModel(
-                new String[]{
-                    "Código", "Producto", "Cantidad",
-                    "Costo unitario", "Subtotal", "Series"
-                },
-                0
-        ) {
+    public void mostrarDetalles(
+            List<DetalleCompra> detalles) {
+
+        actualizandoTablaDetalle = true;
+
+        DefaultTableModel modelo
+                = new DefaultTableModel(
+                        new String[]{
+                            "Código",
+                            "Producto",
+                            "Cantidad",
+                            "Costo unitario",
+                            "Descuento (L)",
+                            "Subtotal",
+                            "Total",
+                            "Series"
+                        },
+                        0
+                ) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
+            public boolean isCellEditable(
+                    int row,
+                    int column) {
+
+                /*
+                     * Solamente puede editarse la columna
+                     * del descuento.
+                 */
+                return column == 4;
+            }
+
+            @Override
+            public Class<?> getColumnClass(
+                    int columnIndex) {
+
+                return columnIndex == 2
+                        ? Integer.class
+                        : String.class;
             }
         };
 
         for (DetalleCompra detalle : detalles) {
+
             modelo.addRow(new Object[]{
                 detalle.getCodigoProducto(),
                 detalle.getNombreProducto(),
                 detalle.getCantidad(),
-                formatearMoneda(detalle.getCostoUnitario()),
-                formatearMoneda(detalle.getSubtotal()),
+                formatearMoneda(
+                detalle.getCostoUnitario()
+                ),
+                detalle.getDescuentoLinea()
+                .setScale(
+                2,
+                RoundingMode.HALF_UP
+                )
+                .toPlainString(),
+                formatearMoneda(
+                detalle.getSubtotal()
+                ),
+                formatearMoneda(
+                detalle.getTotalLinea()
+                ),
                 detalle.getResumenSeries()
             });
         }
 
+        modelo.addTableModelListener(e -> {
+
+            if (actualizandoTablaDetalle) {
+                return;
+            }
+
+            if (e.getType()
+                    != javax.swing.event.TableModelEvent.UPDATE) {
+
+                return;
+            }
+
+            if (e.getColumn() != 4) {
+                return;
+            }
+
+            int fila = e.getFirstRow();
+
+            Object valor
+                    = modelo.getValueAt(fila, 4);
+
+            String descuento = valor == null
+                    ? ""
+                    : valor.toString();
+
+            javax.swing.SwingUtilities.invokeLater(
+                    () -> controlador
+                            .actualizarDescuentoDetalle(
+                                    fila,
+                                    descuento
+                            )
+            );
+        });
+
         tblDetalle.setModel(modelo);
-        estilizarTabla(tblDetalle);
 
-        if (tblDetalle.getColumnCount() >= 6) {
-            tblDetalle.getColumnModel().getColumn(0).setPreferredWidth(90);
-            tblDetalle.getColumnModel().getColumn(1).setPreferredWidth(240);
-            tblDetalle.getColumnModel().getColumn(2).setPreferredWidth(70);
-            tblDetalle.getColumnModel().getColumn(3).setPreferredWidth(110);
-            tblDetalle.getColumnModel().getColumn(4).setPreferredWidth(110);
-            tblDetalle.getColumnModel().getColumn(5).setPreferredWidth(105);
+        if (tblDetalle.getColumnCount() >= 8) {
 
-            DefaultTableCellRenderer centro = new DefaultTableCellRenderer();
-            centro.setHorizontalAlignment(SwingConstants.CENTER);
-            tblDetalle.getColumnModel().getColumn(2).setCellRenderer(centro);
+            tblDetalle.getColumnModel()
+                    .getColumn(0)
+                    .setPreferredWidth(85);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(1)
+                    .setPreferredWidth(210);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(2)
+                    .setPreferredWidth(65);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(3)
+                    .setPreferredWidth(105);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(4)
+                    .setPreferredWidth(105);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(5)
+                    .setPreferredWidth(100);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(6)
+                    .setPreferredWidth(100);
+
+            tblDetalle.getColumnModel()
+                    .getColumn(7)
+                    .setPreferredWidth(95);
         }
+
+        actualizandoTablaDetalle = false;
+
+        estilizarTabla(tblDetalle);
     }
 
     public int getFilaDetalleSeleccionadaModelo() {
@@ -410,14 +514,43 @@ public class ComprasPanel extends javax.swing.JPanel {
             int productos,
             int unidades,
             BigDecimal subtotal,
-            BigDecimal descuento,
+            BigDecimal descuentoTotal,
+            BigDecimal porcentajeDescuento,
             BigDecimal total) {
 
-        lblProductosAgregadosValor.setText(String.valueOf(productos));
-        lblUnidadesValor.setText(String.valueOf(unidades));
-        lblSubtotalValor.setText(formatearMoneda(subtotal));
-        lblDescuentoValor.setText(formatearMoneda(descuento));
-        lblTotalValor.setText(formatearMoneda(total));
+        lblProductosAgregadosValor.setText(
+                String.valueOf(productos)
+        );
+
+        lblUnidadesValor.setText(
+                String.valueOf(unidades)
+        );
+
+        lblSubtotalValor.setText(
+                formatearMoneda(subtotal)
+        );
+
+        txtDescuento.setText(
+                porcentajeDescuento
+                        .setScale(
+                                2,
+                                RoundingMode.HALF_UP
+                        )
+                        .toPlainString()
+                + " %"
+        );
+
+        /*
+     * Debajo del porcentaje se conserva el monto
+     * total descontado.
+         */
+        lblDescuentoValor.setText(
+                formatearMoneda(descuentoTotal)
+        );
+
+        lblTotalValor.setText(
+                formatearMoneda(total)
+        );
     }
 
     public void limpiarProductoSeleccionado() {
@@ -759,7 +892,6 @@ public class ComprasPanel extends javax.swing.JPanel {
         lblHasta = new javax.swing.JLabel();
         txtFechaHasta = new javax.swing.JTextField();
         cmbEstadoHistorial = new javax.swing.JComboBox<>();
-        btnBuscarHistorial = new javax.swing.JButton();
         pnlTablaHistorial = new javax.swing.JPanel();
         lblTituloHistorial = new javax.swing.JLabel();
         scrollHistorial = new javax.swing.JScrollPane();
@@ -1030,11 +1162,11 @@ public class ComprasPanel extends javax.swing.JPanel {
         lblTituloFiltros.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloFiltros.setText("Filtros de búsqueda");
         pnlFiltrosHistorial.add(lblTituloFiltros);
-        lblTituloFiltros.setBounds(16, 10, 220, 26);
+        lblTituloFiltros.setBounds(20, 30, 220, 26);
 
         txtBuscarHistorial.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFiltrosHistorial.add(txtBuscarHistorial);
-        txtBuscarHistorial.setBounds(16, 46, 270, 38);
+        txtBuscarHistorial.setBounds(20, 60, 270, 30);
 
         lblDesde.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblDesde.setText("Desde");
@@ -1043,7 +1175,7 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         txtFechaDesde.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFiltrosHistorial.add(txtFechaDesde);
-        txtFechaDesde.setBounds(300, 61, 135, 33);
+        txtFechaDesde.setBounds(300, 60, 135, 30);
 
         lblHasta.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblHasta.setText("Hasta");
@@ -1052,16 +1184,11 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         txtFechaHasta.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFiltrosHistorial.add(txtFechaHasta);
-        txtFechaHasta.setBounds(448, 61, 135, 33);
+        txtFechaHasta.setBounds(450, 60, 135, 30);
 
         cmbEstadoHistorial.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlFiltrosHistorial.add(cmbEstadoHistorial);
-        cmbEstadoHistorial.setBounds(597, 51, 150, 38);
-
-        btnBuscarHistorial.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btnBuscarHistorial.setText("Buscar");
-        pnlFiltrosHistorial.add(btnBuscarHistorial);
-        btnBuscarHistorial.setBounds(761, 51, 100, 38);
+        cmbEstadoHistorial.setBounds(597, 59, 150, 30);
 
         pnlHistorial.add(pnlFiltrosHistorial);
         pnlFiltrosHistorial.setBounds(0, 8, 959, 110);
@@ -1112,7 +1239,6 @@ public class ComprasPanel extends javax.swing.JPanel {
     private javax.swing.JButton btnActualizarHistorial;
     private javax.swing.JButton btnAgregarProducto;
     private javax.swing.JButton btnAnularCompra;
-    private javax.swing.JButton btnBuscarHistorial;
     private javax.swing.JButton btnGuardarCompra;
     private javax.swing.JButton btnNuevaCompra;
     private javax.swing.JButton btnQuitarProducto;

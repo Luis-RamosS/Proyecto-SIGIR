@@ -24,6 +24,8 @@ import sigir.vista.paneles.InventarioPanel;
  */
 public class FrmInicio extends javax.swing.JFrame {
 
+    
+    private javax.swing.JButton botonMenuActivo;
     private JComponent panelActual;
     private ProductosPanel productosPanel;
     private ClientesPanel clientesPanel;
@@ -62,6 +64,8 @@ public class FrmInicio extends javax.swing.JFrame {
         cargarDatos();
         configurarNavegacion();
         configurarPermisos();
+        
+         marcarBotonActivo(btnInicio);
     }
 
     public FrmInicio(String usuario) {
@@ -141,6 +145,92 @@ public class FrmInicio extends javax.swing.JFrame {
             }
         });
     }
+    
+    private javax.swing.JButton[] obtenerBotonesMenu() {
+
+        return new javax.swing.JButton[]{
+            btnInicio,
+            btnVentas,
+            btnCompras,
+            btnProductos,
+            btnInventario,
+            btnClientes,
+            btnProveedores,
+            btnCreditos,
+            btnReparaciones,
+            btnUsuarios,
+            btnReportes,
+            btnConfiguracion
+        };
+    }
+    
+    private void marcarBotonActivo(
+        javax.swing.JButton botonSeleccionado) {
+
+    java.awt.Color azulActivo =
+            new java.awt.Color(70, 119, 177);
+
+    java.awt.Color textoInactivo =
+            new java.awt.Color(30, 73, 125);
+
+    java.awt.Color borde =
+            new java.awt.Color(230, 233, 238);
+
+    for (javax.swing.JButton boton
+            : obtenerBotonesMenu()) {
+
+        boolean activo =
+                boton == botonSeleccionado;
+
+        boton.setOpaque(true);
+        boton.setContentAreaFilled(true);
+        boton.setBorderPainted(false);
+        boton.setFocusPainted(false);
+
+        boton.setBackground(
+                activo
+                        ? azulActivo
+                        : java.awt.Color.WHITE
+        );
+
+        boton.setForeground(
+                activo
+                        ? java.awt.Color.WHITE
+                        : textoInactivo
+        );
+
+        boton.setFont(
+                new java.awt.Font(
+                        "Segoe UI",
+                        activo
+                                ? java.awt.Font.BOLD
+                                : java.awt.Font.PLAIN,
+                        14
+                )
+        );
+
+        boton.setBorder(
+                javax.swing.BorderFactory.createMatteBorder(
+                        0,
+                        0,
+                        1,
+                        0,
+                        borde
+                )
+        );
+    }
+
+    botonMenuActivo = botonSeleccionado;
+}
+    
+    private void mostrarModulo(
+            javax.swing.JButton boton,
+            javax.swing.JComponent panel) {
+
+        marcarBotonActivo(boton);
+        mostrarPanel(panel);
+    }
+    
     private void configurarPermisos() {
 
         if (!Sesion.haySesionActiva()) {
@@ -283,24 +373,13 @@ public class FrmInicio extends javax.swing.JFrame {
 
     private void configurarNavegacion() {
 
-    btnInicio.addActionListener(
-            e -> mostrarPanel(pnlContenido)
-    );
+        btnInicio.addActionListener(e -> {
 
-    btnProductos.addActionListener(e -> {
-
-        if (productosPanel == null) {
-            productosPanel = new ProductosPanel();
-        } else {
-            productosPanel.recargar();
-        }
-
-        mostrarPanel(productosPanel);
-    });
-
-    btnVentas.addActionListener(
-            e -> abrirModulo("Ventas")
-    );
+            mostrarModulo(
+                    btnInicio,
+                    pnlContenido
+            );
+        });
 
         btnCompras.addActionListener(e -> {
 
@@ -310,18 +389,39 @@ public class FrmInicio extends javax.swing.JFrame {
                 comprasPanel.recargar();
             }
 
-            mostrarPanel(comprasPanel);
+            mostrarModulo(
+                    btnCompras,
+                    comprasPanel
+            );
+        });
+
+        btnProductos.addActionListener(e -> {
+
+            if (productosPanel == null) {
+                productosPanel = new ProductosPanel();
+            } else {
+                productosPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnProductos,
+                    productosPanel
+            );
         });
 
         btnInventario.addActionListener(e -> {
 
             if (inventarioPanel == null) {
-                inventarioPanel = new InventarioPanel();
+                inventarioPanel
+                        = new InventarioPanel();
             } else {
                 inventarioPanel.recargar();
             }
 
-            mostrarPanel(inventarioPanel);
+            mostrarModulo(
+                    btnInventario,
+                    inventarioPanel
+            );
         });
 
         btnClientes.addActionListener(e -> {
@@ -332,40 +432,57 @@ public class FrmInicio extends javax.swing.JFrame {
                 clientesPanel.recargar();
             }
 
-            mostrarPanel(clientesPanel);
+            mostrarModulo(
+                    btnClientes,
+                    clientesPanel
+            );
         });
 
         btnProveedores.addActionListener(e -> {
 
             if (proveedoresPanel == null) {
-                proveedoresPanel = new ProveedoresPanel();
+                proveedoresPanel
+                        = new ProveedoresPanel();
             } else {
                 proveedoresPanel.recargar();
             }
 
-            mostrarPanel(proveedoresPanel);
+            mostrarModulo(
+                    btnProveedores,
+                    proveedoresPanel
+            );
         });
 
-    btnCreditos.addActionListener(
-            e -> abrirModulo("Créditos")
-    );
+        btnVentas.addActionListener(e -> {
+            marcarBotonActivo(btnVentas);
+            abrirModulo("Ventas");
+        });
 
-    btnReparaciones.addActionListener(
-            e -> abrirModulo("Reparaciones")
-    );
+        btnCreditos.addActionListener(e -> {
+            marcarBotonActivo(btnCreditos);
+            abrirModulo("Créditos");
+        });
 
-    btnUsuarios.addActionListener(
-            e -> abrirModulo("Usuarios")
-    );
+        btnReparaciones.addActionListener(e -> {
+            marcarBotonActivo(btnReparaciones);
+            abrirModulo("Reparaciones");
+        });
 
-    btnReportes.addActionListener(
-            e -> abrirModulo("Reportes")
-    );
+        btnUsuarios.addActionListener(e -> {
+            marcarBotonActivo(btnUsuarios);
+            abrirModulo("Usuarios");
+        });
 
-    btnConfiguracion.addActionListener(
-            e -> abrirModulo("Configuración")
-    );
-}
+        btnReportes.addActionListener(e -> {
+            marcarBotonActivo(btnReportes);
+            abrirModulo("Reportes");
+        });
+
+        btnConfiguracion.addActionListener(e -> {
+            marcarBotonActivo(btnConfiguracion);
+            abrirModulo("Configuración");
+        });
+    }
 
     private void abrirModulo(String modulo) {
         JOptionPane.showMessageDialog(

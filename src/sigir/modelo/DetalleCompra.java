@@ -14,6 +14,7 @@ public class DetalleCompra {
     private String nombreProducto;
     private int cantidad;
     private BigDecimal costoUnitario = BigDecimal.ZERO;
+    private BigDecimal descuentoLinea = BigDecimal.ZERO;
     private BigDecimal subtotal = BigDecimal.ZERO;
     private boolean manejaNumeroSerie;
     private final List<String> numerosSerie = new ArrayList<>();
@@ -122,5 +123,34 @@ public class DetalleCompra {
         return numerosSerie.isEmpty()
                 ? "Sin registrar"
                 : numerosSerie.size() + " registradas";
+    }
+    
+    public BigDecimal getDescuentoLinea() {
+
+        return descuentoLinea == null
+                ? BigDecimal.ZERO
+                : descuentoLinea;
+    }
+
+    public void setDescuentoLinea(
+            BigDecimal descuentoLinea) {
+
+        this.descuentoLinea
+                = descuentoLinea == null
+                        ? BigDecimal.ZERO
+                        : descuentoLinea.setScale(
+                                2,
+                                RoundingMode.HALF_UP
+                        );
+    }
+
+    public BigDecimal getTotalLinea() {
+
+        return getSubtotal()
+                .subtract(getDescuentoLinea())
+                .setScale(
+                        2,
+                        RoundingMode.HALF_UP
+                );
     }
 }

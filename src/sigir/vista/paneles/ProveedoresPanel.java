@@ -13,6 +13,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import sigir.controlador.ProveedorControlador;
 import sigir.modelo.Proveedor;
+import sigir.util.FiltroTiempoReal;
 
 public class ProveedoresPanel extends javax.swing.JPanel {
 
@@ -22,9 +23,14 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         initComponents();
         configurarComponentes();
         aplicarEstilos();
-        configurarEventos();
-
+        
         controlador = new ProveedorControlador(this);
+        
+        configurarEventos();
+        FiltroTiempoReal.activar(
+                txtBuscar,
+                controlador::buscar
+        );
         controlador.iniciar();
     }
 
@@ -107,7 +113,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
             btnGuardar,
             btnCambiarEstado,
             btnActualizar,
-            btnBuscar
+            
         };
 
         for (javax.swing.JButton boton : botones) {
@@ -164,11 +170,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                 )
         );
 
-        btnBuscar.setBackground(Color.WHITE);
-        btnBuscar.setForeground(texto);
-        btnBuscar.setBorder(
-                BorderFactory.createLineBorder(borde)
-        );
+        
 
         estilizarTabla();
     }
@@ -239,13 +241,9 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                 e -> controlador.recargar()
         );
 
-        btnBuscar.addActionListener(
-                e -> controlador.buscar()
-        );
+        
 
-        txtBuscar.addActionListener(
-                e -> controlador.buscar()
-        );
+        
 
         cmbFiltroEstado.addActionListener(e -> {
             if (cmbFiltroEstado.getItemCount() > 0) {
@@ -622,7 +620,6 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         lblTituloLista = new javax.swing.JLabel();
         txtBuscar = new javax.swing.JTextField();
         cmbFiltroEstado = new javax.swing.JComboBox<>();
-        btnBuscar = new javax.swing.JButton();
         scrollProveedores = new javax.swing.JScrollPane();
         tblProveedores = new javax.swing.JTable();
         lblCantidad = new javax.swing.JLabel();
@@ -635,13 +632,13 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
         lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
         lblTitulo.setText("Gestión de Proveedores");
         pnlEncabezado.add(lblTitulo);
         lblTitulo.setBounds(0, 4, 430, 40);
 
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
         lblSubtitulo.setText("Administra los proveedores utilizados en las compras.");
         pnlEncabezado.add(lblSubtitulo);
@@ -653,80 +650,79 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         pnlInformacion.setBackground(new java.awt.Color(255, 255, 255));
         pnlInformacion.setLayout(null);
 
-        lblTituloInformacion.setFont(new java.awt.Font("Segoe UI", 1, 17));
+        lblTituloInformacion.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
         lblTituloInformacion.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloInformacion.setText("Información del nuevo proveedor");
         pnlInformacion.add(lblTituloInformacion);
         lblTituloInformacion.setBounds(18, 12, 410, 28);
 
-        lblNombreProveedor.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblNombreProveedor.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblNombreProveedor.setForeground(new java.awt.Color(38, 64, 99));
         lblNombreProveedor.setText("Nombre del proveedor");
         pnlInformacion.add(lblNombreProveedor);
         lblNombreProveedor.setBounds(18, 50, 200, 18);
 
-        txtNombreProveedor.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtNombreProveedor.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtNombreProveedor);
         txtNombreProveedor.setBounds(18, 72, 330, 38);
 
-        lblRtn.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblRtn.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblRtn.setForeground(new java.awt.Color(38, 64, 99));
         lblRtn.setText("RTN");
         pnlInformacion.add(lblRtn);
         lblRtn.setBounds(360, 50, 170, 18);
 
-        txtRtn.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtRtn.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtRtn);
         txtRtn.setBounds(360, 72, 210, 38);
 
-        lblContacto.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblContacto.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblContacto.setForeground(new java.awt.Color(38, 64, 99));
         lblContacto.setText("Nombre de contacto");
         pnlInformacion.add(lblContacto);
         lblContacto.setBounds(582, 50, 180, 18);
 
-        txtContacto.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtContacto.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtContacto);
         txtContacto.setBounds(582, 72, 240, 38);
 
-        lblTelefono.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblTelefono.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTelefono.setForeground(new java.awt.Color(38, 64, 99));
         lblTelefono.setText("Teléfono");
         pnlInformacion.add(lblTelefono);
         lblTelefono.setBounds(18, 122, 150, 18);
 
-        txtTelefono.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtTelefono.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtTelefono);
         txtTelefono.setBounds(18, 144, 220, 38);
 
-        lblCorreo.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblCorreo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblCorreo.setForeground(new java.awt.Color(38, 64, 99));
         lblCorreo.setText("Correo electrónico");
         pnlInformacion.add(lblCorreo);
         lblCorreo.setBounds(250, 122, 190, 18);
 
-        txtCorreo.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtCorreo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtCorreo);
         txtCorreo.setBounds(250, 144, 320, 38);
 
-        lblDireccion.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblDireccion.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblDireccion.setForeground(new java.awt.Color(38, 64, 99));
         lblDireccion.setText("Dirección");
         pnlInformacion.add(lblDireccion);
         lblDireccion.setBounds(582, 122, 180, 18);
 
-        txtDireccion.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtDireccion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(txtDireccion);
         txtDireccion.setBounds(582, 144, 240, 38);
 
-        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblEstado.setForeground(new java.awt.Color(38, 64, 99));
         lblEstado.setText("Estado");
         pnlInformacion.add(lblEstado);
         lblEstado.setBounds(18, 194, 180, 18);
 
-        cmbEstado.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        cmbEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ACTIVO", "INACTIVO" }));
+        cmbEstado.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         pnlInformacion.add(cmbEstado);
         cmbEstado.setBounds(18, 216, 804, 38);
 
@@ -736,29 +732,29 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         pnlAcciones.setBackground(new java.awt.Color(255, 255, 255));
         pnlAcciones.setLayout(null);
 
-        lblTituloAcciones.setFont(new java.awt.Font("Segoe UI", 1, 17));
+        lblTituloAcciones.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
         lblTituloAcciones.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloAcciones.setText("Acciones rápidas");
         pnlAcciones.add(lblTituloAcciones);
         lblTituloAcciones.setBounds(18, 12, 230, 28);
 
-        btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnNuevo.setText("+  Nuevo proveedor");
         pnlAcciones.add(btnNuevo);
         btnNuevo.setBounds(18, 52, 210, 44);
 
-        btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnGuardar.setText("Guardar proveedor");
         pnlAcciones.add(btnGuardar);
         btnGuardar.setBounds(18, 106, 210, 44);
 
-        btnCambiarEstado.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnCambiarEstado.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnCambiarEstado.setText("Desactivar proveedor");
         btnCambiarEstado.setEnabled(false);
         pnlAcciones.add(btnCambiarEstado);
         btnCambiarEstado.setBounds(18, 160, 210, 44);
 
-        btnActualizar.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnActualizar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnActualizar.setText("Actualizar lista");
         pnlAcciones.add(btnActualizar);
         btnActualizar.setBounds(18, 214, 210, 44);
@@ -769,57 +765,25 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         pnlLista.setBackground(new java.awt.Color(255, 255, 255));
         pnlLista.setLayout(null);
 
-        lblTituloLista.setFont(new java.awt.Font("Segoe UI", 1, 17));
+        lblTituloLista.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
         lblTituloLista.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloLista.setText("Lista de proveedores");
         pnlLista.add(lblTituloLista);
         lblTituloLista.setBounds(18, 12, 230, 28);
 
-        txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtBuscar.setToolTipText("Buscar por proveedor, RTN, contacto, teléfono o correo");
         pnlLista.add(txtBuscar);
         txtBuscar.setBounds(285, 8, 390, 38);
-
-        cmbFiltroEstado.setFont(new java.awt.Font("Segoe UI", 0, 12));
-        cmbFiltroEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "TODOS", "ACTIVO", "INACTIVO" }));
         pnlLista.add(cmbFiltroEstado);
         cmbFiltroEstado.setBounds(687, 8, 150, 38);
 
-        btnBuscar.setFont(new java.awt.Font("Segoe UI", 1, 12));
-        btnBuscar.setText("Buscar");
-        pnlLista.add(btnBuscar);
-        btnBuscar.setBounds(849, 8, 110, 38);
-
-        tblProveedores.setFont(new java.awt.Font("Segoe UI", 0, 13));
-        tblProveedores.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "ID", "Código", "Proveedor", "RTN", "Contacto", "Teléfono", "Correo", "Estado"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
+        tblProveedores.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         scrollProveedores.setViewportView(tblProveedores);
 
         pnlLista.add(scrollProveedores);
         scrollProveedores.setBounds(0, 56, 1110, 250);
 
-        lblCantidad.setFont(new java.awt.Font("Segoe UI", 0, 12));
         lblCantidad.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidad.setText("Mostrando 0 proveedores");
         pnlLista.add(lblCantidad);
@@ -831,7 +795,6 @@ public class ProveedoresPanel extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizar;
-    private javax.swing.JButton btnBuscar;
     private javax.swing.JButton btnCambiarEstado;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnNuevo;

@@ -54,6 +54,79 @@ public class CompraControlador {
         }
     }
 
+    public void actualizarDescuentoDetalle(
+            int fila,
+            String textoDescuento) {
+
+        try {
+            if (fila < 0 || fila >= detalles.size()) {
+                return;
+            }
+
+            String valor = textoDescuento == null
+                    ? ""
+                    : textoDescuento
+                            .trim()
+                            .replace("L", "")
+                            .replace(",", "");
+
+            BigDecimal descuento = valor.isBlank()
+                    ? BigDecimal.ZERO
+                    : new BigDecimal(valor);
+
+            descuento = descuento.setScale(
+                    2,
+                    RoundingMode.HALF_UP
+            );
+
+            DetalleCompra detalle
+                    = detalles.get(fila);
+
+            if (descuento.compareTo(
+                    BigDecimal.ZERO
+            ) < 0) {
+
+                throw new IllegalArgumentException(
+                        "El descuento no puede ser negativo."
+                );
+            }
+
+            if (descuento.compareTo(
+                    detalle.getSubtotal()
+            ) > 0) {
+
+                throw new IllegalArgumentException(
+                        "El descuento no puede ser mayor "
+                        + "que el subtotal del producto."
+                );
+            }
+
+            detalle.setDescuentoLinea(descuento);
+
+        } catch (NumberFormatException ex) {
+
+            JOptionPane.showMessageDialog(
+                    vista,
+                    "Escribe un descuento válido. "
+                    + "Ejemplo: 20.00",
+                    "Descuento incorrecto",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+        } catch (IllegalArgumentException ex) {
+
+            JOptionPane.showMessageDialog(
+                    vista,
+                    ex.getMessage(),
+                    "Descuento incorrecto",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+        } finally {
+            actualizarCarrito();
+        }
+    }
+    
     public void nuevaCompra() {
         detalles.clear();
         vista.limpiarCompra();
@@ -392,7 +465,7 @@ public class CompraControlador {
         compra.setTipoPago(vista.getTipoPago());
         compra.setObservaciones(vista.getObservaciones());
         compra.setDetalles(new ArrayList<>(detalles));
-        compra.setDescuento(vista.getDescuento());
+        
         compra.setEstado("REGISTRADA");
         compra.recalcularTotales();
         return compra;
@@ -462,24 +535,50 @@ public class CompraControlador {
     }
 
     private void actualizarCarrito() {
+
         vista.mostrarDetalles(detalles);
 
         BigDecimal subtotal = detalles.stream()
                 .map(DetalleCompra::getSubtotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+                .reduce(
+                        BigDecimal.ZERO,
+                        BigDecimal::add
+                )
+                .setScale(
+                        2,
+                        RoundingMode.HALF_UP
+                );
 
-        BigDecimal descuento;
+        BigDecimal descuentoTotal = detalles.stream()
+                .map(DetalleCompra::getDescuentoLinea)
+                .reduce(
+                        BigDecimal.ZERO,
+                        BigDecimal::add
+                )
+                .setScale(
+                        2,
+                        RoundingMode.HALF_UP
+                );
 
-        try {
-            descuento = vista.getDescuento();
-        } catch (IllegalArgumentException ex) {
-            descuento = BigDecimal.ZERO;
-        }
+        BigDecimal porcentajeDescuento
+                = subtotal.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : descuentoTotal
+                        .multiply(
+                                BigDecimal.valueOf(100)
+                        )
+                        .divide(
+                                subtotal,
+                                2,
+                                RoundingMode.HALF_UP
+                        );
 
-        BigDecimal total = subtotal.subtract(descuento)
-                .max(BigDecimal.ZERO)
-                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal
+                .subtract(descuentoTotal)
+                .setScale(
+                        2,
+                        RoundingMode.HALF_UP
+                );
 
         int unidades = detalles.stream()
                 .mapToInt(DetalleCompra::getCantidad)
@@ -489,7 +588,8 @@ public class CompraControlador {
                 detalles.size(),
                 unidades,
                 subtotal,
-                descuento,
+                descuentoTotal,
+                porcentajeDescuento,
                 total
         );
     }
