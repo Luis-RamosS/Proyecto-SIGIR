@@ -60,12 +60,27 @@ public class CompraDAO {
 
     public List<Producto> listarProductosDisponibles() throws SQLException {
         String sql = """
-                SELECT id_producto, id_categoria, codigo, nombre, descripcion,
-                       marca, modelo, precio_compra, precio_venta, stock_actual,
-                       stock_minimo, maneja_numero_serie, estado, fecha_registro
-                FROM dbo.productos
-                WHERE estado IN ('ACTIVO', 'AGOTADO')
-                ORDER BY nombre;
+                SELECT
+                    p.id_producto,
+                    p.id_categoria,
+                    c.nombre AS nombre_categoria,
+                    p.codigo,
+                    p.nombre,
+                    p.descripcion,
+                    p.marca,
+                    p.modelo,
+                    p.precio_compra,
+                    p.precio_venta,
+                    p.stock_actual,
+                    p.stock_minimo,
+                    p.maneja_numero_serie,
+                    p.estado,
+                    p.fecha_registro
+                FROM dbo.productos AS p
+                INNER JOIN dbo.categorias_producto AS c
+                    ON c.id_categoria = p.id_categoria
+                WHERE p.estado IN ('ACTIVO', 'AGOTADO')
+                ORDER BY p.nombre;
                 """;
 
         List<Producto> productos = new ArrayList<>();
@@ -78,6 +93,9 @@ public class CompraDAO {
                 Producto producto = new Producto();
                 producto.setIdProducto(resultado.getInt("id_producto"));
                 producto.setIdCategoria(resultado.getInt("id_categoria"));
+                producto.setNombreCategoria(
+                        resultado.getString("nombre_categoria")
+                );
                 producto.setCodigo(resultado.getString("codigo"));
                 producto.setNombre(resultado.getString("nombre"));
                 producto.setDescripcion(resultado.getString("descripcion"));
@@ -258,22 +276,15 @@ public class CompraDAO {
                 """;
 
         String sqlDetalle = """
-        SELECT
-            dc.id_detalle_compra,
-            dc.id_producto,
-            p.codigo,
-            p.nombre,
-            p.maneja_numero_serie,
-            dc.cantidad,
-            dc.costo_unitario,
-            dc.descuento_linea,
-            dc.subtotal
-        FROM dbo.detalle_compra AS dc
-        INNER JOIN dbo.productos AS p
-            ON p.id_producto = dc.id_producto
-        WHERE dc.id_compra = ?
-        ORDER BY dc.id_detalle_compra;
-        """;
+                SELECT dc.id_detalle_compra, dc.id_producto,
+                       p.codigo, p.nombre, p.maneja_numero_serie,
+                       dc.cantidad, dc.costo_unitario, dc.subtotal
+                FROM dbo.detalle_compra AS dc
+                INNER JOIN dbo.productos AS p
+                    ON p.id_producto = dc.id_producto
+                WHERE dc.id_compra = ?
+                ORDER BY dc.id_detalle_compra;
+                """;
 
         try (Connection conexion = ConexionBD.obtenerConexion()) {
             Compra compra;
@@ -305,8 +316,7 @@ public class CompraDAO {
                         detalle.setCantidad(resultado.getInt("cantidad"));
                         detalle.setCostoUnitario(resultado.getBigDecimal("costo_unitario"));
                         detalle.setSubtotal(resultado.getBigDecimal("subtotal"));
-                        detalle.setDescuentoLinea(resultado.getBigDecimal("descuento_linea"));
-                        
+
                         if (detalle.isManejaNumeroSerie()) {
                             detalle.setNumerosSerie(
                                     listarSeriesCompra(
@@ -444,54 +454,19 @@ public class CompraDAO {
             DetalleCompra detalle) throws SQLException {
 
         String sql = """
-            INSERT INTO dbo.detalle_compra
-            (
-                id_compra,
-                id_producto,
-                cantidad,
-                costo_unitario,
-                descuento_linea,
-                subtotal
-            )
-            VALUES (?, ?, ?, ?, ?, ?);
-            """;
+                INSERT INTO dbo.detalle_compra
+                (id_compra, id_producto, cantidad, costo_unitario, subtotal)
+                VALUES (?, ?, ?, ?, ?);
+                """;
 
-        try (PreparedStatement sentencia
-                = conexion.prepareStatement(sql)) {
-
-            sentencia.setInt(
-                    1,
-                    idCompra
-            );
-
-            sentencia.setInt(
-                    2,
-                    detalle.getIdProducto()
-            );
-
-            sentencia.setInt(
-                    3,
-                    detalle.getCantidad()
-            );
-
-            sentencia.setBigDecimal(
-                    4,
-                    detalle.getCostoUnitario()
-            );
-
-            sentencia.setBigDecimal(
-                    5,
-                    detalle.getDescuentoLinea()
-            );
-
-            sentencia.setBigDecimal(
-                    6,
-                    detalle.getSubtotal()
-            );
-
+        try (PreparedStatement sentencia = conexion.prepareStatement(sql)) {
+            sentencia.setInt(1, idCompra);
+            sentencia.setInt(2, detalle.getIdProducto());
+            sentencia.setInt(3, detalle.getCantidad());
+            sentencia.setBigDecimal(4, detalle.getCostoUnitario());
+            sentencia.setBigDecimal(5, detalle.getSubtotal());
             sentencia.executeUpdate();
         }
-    
     }
 
     private int bloquearYObtenerStock(Connection conexion, int idProducto)

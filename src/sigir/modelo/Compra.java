@@ -25,35 +25,17 @@ public class Compra {
     private final List<DetalleCompra> detalles = new ArrayList<>();
 
     public void recalcularTotales() {
-
         subtotal = detalles.stream()
                 .map(DetalleCompra::getSubtotal)
-                .reduce(
-                        BigDecimal.ZERO,
-                        BigDecimal::add
-                )
-                .setScale(
-                        2,
-                        RoundingMode.HALF_UP
-                );
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
 
-        descuento = detalles.stream()
-                .map(DetalleCompra::getDescuentoLinea)
-                .reduce(
-                        BigDecimal.ZERO,
-                        BigDecimal::add
-                )
-                .setScale(
-                        2,
-                        RoundingMode.HALF_UP
-                );
+        BigDecimal valorDescuento = descuento == null
+                ? BigDecimal.ZERO
+                : descuento;
 
-        total = subtotal
-                .subtract(descuento)
-                .setScale(
-                        2,
-                        RoundingMode.HALF_UP
-                );
+        total = subtotal.subtract(valorDescuento)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public int getCantidadProductos() {

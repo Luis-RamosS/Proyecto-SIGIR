@@ -17,6 +17,7 @@ import sigir.vista.paneles.ClientesPanel;
 import sigir.vista.paneles.ProveedoresPanel;
 import sigir.vista.paneles.ComprasPanel;
 import sigir.vista.paneles.InventarioPanel;
+import sigir.vista.paneles.VentasPanel;
 
 /**
  * Pantalla de inicio de SIGIR creada como JFrame Form de NetBeans.
@@ -32,6 +33,7 @@ public class FrmInicio extends javax.swing.JFrame {
     private ProveedoresPanel proveedoresPanel;
     private ComprasPanel comprasPanel;
     private InventarioPanel inventarioPanel;
+    private VentasPanel ventasPanel;
     
     public FrmInicio() {
 
@@ -454,8 +456,17 @@ public class FrmInicio extends javax.swing.JFrame {
         });
 
         btnVentas.addActionListener(e -> {
-            marcarBotonActivo(btnVentas);
-            abrirModulo("Ventas");
+
+            if (ventasPanel == null) {
+                ventasPanel = new VentasPanel();
+            } else {
+                ventasPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnVentas,
+                    ventasPanel
+            );
         });
 
         btnCreditos.addActionListener(e -> {

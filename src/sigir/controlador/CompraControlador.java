@@ -1,7 +1,6 @@
 package sigir.controlador;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,8 +22,15 @@ public class CompraControlador {
 
     private final ComprasPanel vista;
     private final CompraDAO compraDAO;
-    private final List<DetalleCompra> detalles = new ArrayList<>();
-    private List<Compra> compras = new ArrayList<>();
+
+    private final List<DetalleCompra> detalles =
+            new ArrayList<>();
+
+    private List<Producto> productosDisponibles =
+            new ArrayList<>();
+
+    private List<Compra> compras =
+            new ArrayList<>();
 
     public CompraControlador(ComprasPanel vista) {
         this.vista = vista;
@@ -44,8 +50,13 @@ public class CompraControlador {
 
     private void cargarCombos() {
         try {
-            vista.cargarProveedores(compraDAO.listarProveedoresActivos());
-            vista.cargarProductos(compraDAO.listarProductosDisponibles());
+            vista.cargarProveedores(
+                    compraDAO.listarProveedoresActivos()
+            );
+
+            productosDisponibles =
+                    compraDAO.listarProductosDisponibles();
+
         } catch (SQLException ex) {
             mostrarErrorBaseDatos(
                     "No fue posible cargar proveedores o productos.",
@@ -54,121 +65,98 @@ public class CompraControlador {
         }
     }
 
-    public void actualizarDescuentoDetalle(
-            int fila,
-            String textoDescuento) {
-
-        try {
-            if (fila < 0 || fila >= detalles.size()) {
-                return;
-            }
-
-            String valor = textoDescuento == null
-                    ? ""
-                    : textoDescuento
-                            .trim()
-                            .replace("L", "")
-                            .replace(",", "");
-
-            BigDecimal descuento = valor.isBlank()
-                    ? BigDecimal.ZERO
-                    : new BigDecimal(valor);
-
-            descuento = descuento.setScale(
-                    2,
-                    RoundingMode.HALF_UP
-            );
-
-            DetalleCompra detalle
-                    = detalles.get(fila);
-
-            if (descuento.compareTo(
-                    BigDecimal.ZERO
-            ) < 0) {
-
-                throw new IllegalArgumentException(
-                        "El descuento no puede ser negativo."
-                );
-            }
-
-            if (descuento.compareTo(
-                    detalle.getSubtotal()
-            ) > 0) {
-
-                throw new IllegalArgumentException(
-                        "El descuento no puede ser mayor "
-                        + "que el subtotal del producto."
-                );
-            }
-
-            detalle.setDescuentoLinea(descuento);
-
-        } catch (NumberFormatException ex) {
-
-            JOptionPane.showMessageDialog(
-                    vista,
-                    "Escribe un descuento válido. "
-                    + "Ejemplo: 20.00",
-                    "Descuento incorrecto",
-                    JOptionPane.WARNING_MESSAGE
-            );
-
-        } catch (IllegalArgumentException ex) {
-
-            JOptionPane.showMessageDialog(
-                    vista,
-                    ex.getMessage(),
-                    "Descuento incorrecto",
-                    JOptionPane.WARNING_MESSAGE
-            );
-
-        } finally {
-            actualizarCarrito();
-        }
-    }
-    
     public void nuevaCompra() {
         detalles.clear();
         vista.limpiarCompra();
-        actualizarCarrito();
+        actualizarDetalle();
+    }
+
+    public void buscarProductoAvanzado() {
+        if (productosDisponibles.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    vista,
+                    "No existen productos disponibles para seleccionar.",
+                    "Catálogo vacío",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        Producto seleccionado =
+                vista.solicitarProductoAvanzado(
+                        productosDisponibles
+                );
+
+        if (seleccionado == null) {
+            return;
+        }
+
+        vista.establecerProductoSeleccionado(
+                seleccionado
+        );
+
+        seleccionarProducto();
     }
 
     public void seleccionarProducto() {
-        Producto producto = vista.getProductoSeleccionado();
+        Producto producto =
+                vista.getProductoSeleccionado();
 
-        if (producto == null || producto.getIdProducto() <= 0) {
+        if (producto == null
+                || producto.getIdProducto() <= 0) {
+
             vista.setCostoProducto(BigDecimal.ZERO);
             vista.mostrarStockProducto(0);
             vista.mostrarAvisoSeries(false);
             return;
         }
 
-        vista.setCostoProducto(producto.getPrecioCompra());
-        vista.mostrarStockProducto(producto.getStockActual());
-        vista.mostrarAvisoSeries(producto.isManejaNumeroSerie());
+        vista.setCostoProducto(
+                producto.getPrecioCompra()
+        );
+
+        vista.mostrarStockProducto(
+                producto.getStockActual()
+        );
+
+        vista.mostrarAvisoSeries(
+                producto.isManejaNumeroSerie()
+        );
     }
 
     public void agregarProducto() {
         try {
-            Producto producto = vista.getProductoSeleccionado();
+            Producto producto =
+                    vista.getProductoSeleccionado();
 
-            if (producto == null || producto.getIdProducto() <= 0) {
-                throw new IllegalArgumentException("Selecciona un producto.");
-            }
+            if (producto == null
+                    || producto.getIdProducto() <= 0) {
 
-            boolean repetido = detalles.stream().anyMatch(
-                    detalle -> detalle.getIdProducto() == producto.getIdProducto()
-            );
-
-            if (repetido) {
                 throw new IllegalArgumentException(
-                        "El producto ya fue agregado. Elimínalo y vuelve "
-                        + "a agregarlo para cambiar la cantidad."
+                        "Primero busca y selecciona un producto."
                 );
             }
 
-            int cantidad = vista.getCantidadProducto();
-            BigDecimal costo = vista.getCostoProducto();
+            boolean repetido =
+                    detalles.stream().anyMatch(
+                            detalle ->
+                                    detalle.getIdProducto()
+                                    == producto.getIdProducto()
+                    );
+
+            if (repetido) {
+                throw new IllegalArgumentException(
+                        "El producto ya fue agregado. "
+                        + "Elimínalo y vuelve a agregarlo "
+                        + "para cambiar la cantidad o el costo."
+                );
+            }
+
+            int cantidad =
+                    vista.getCantidadProducto();
+
+            BigDecimal costo =
+                    vista.getCostoProducto();
 
             if (cantidad <= 0) {
                 throw new IllegalArgumentException(
@@ -182,19 +170,34 @@ public class CompraControlador {
                 );
             }
 
-            DetalleCompra detalle = new DetalleCompra();
-            detalle.setIdProducto(producto.getIdProducto());
-            detalle.setCodigoProducto(producto.getCodigo());
-            detalle.setNombreProducto(producto.getNombre());
-            detalle.setManejaNumeroSerie(producto.isManejaNumeroSerie());
+            DetalleCompra detalle =
+                    new DetalleCompra();
+
+            detalle.setIdProducto(
+                    producto.getIdProducto()
+            );
+
+            detalle.setCodigoProducto(
+                    producto.getCodigo()
+            );
+
+            detalle.setNombreProducto(
+                    producto.getNombre()
+            );
+
+            detalle.setManejaNumeroSerie(
+                    producto.isManejaNumeroSerie()
+            );
+
             detalle.setCantidad(cantidad);
             detalle.setCostoUnitario(costo);
 
             if (detalle.isManejaNumeroSerie()) {
-                List<String> series = vista.solicitarNumerosSerie(
-                        producto,
-                        cantidad
-                );
+                List<String> series =
+                        vista.solicitarNumerosSerie(
+                                producto,
+                                cantidad
+                        );
 
                 if (series == null) {
                     return;
@@ -205,7 +208,8 @@ public class CompraControlador {
             }
 
             detalles.add(detalle);
-            actualizarCarrito();
+
+            actualizarDetalle();
             vista.limpiarProductoSeleccionado();
 
         } catch (IllegalArgumentException ex) {
@@ -219,7 +223,8 @@ public class CompraControlador {
     }
 
     public void eliminarProducto() {
-        int fila = vista.getFilaDetalleSeleccionadaModelo();
+        int fila =
+                vista.getFilaDetalleSeleccionadaModelo();
 
         if (fila < 0 || fila >= detalles.size()) {
             JOptionPane.showMessageDialog(
@@ -232,19 +237,26 @@ public class CompraControlador {
         }
 
         detalles.remove(fila);
-        actualizarCarrito();
+        actualizarDetalle();
     }
 
     public void registrarCompra() {
         try {
             if (!Sesion.haySesionActiva()) {
-                throw new IllegalStateException("No existe una sesión activa.");
+                throw new IllegalStateException(
+                        "No existe una sesión activa."
+                );
             }
 
-            Proveedor proveedor = vista.getProveedorSeleccionado();
+            Proveedor proveedor =
+                    vista.getProveedorSeleccionado();
 
-            if (proveedor == null || proveedor.getIdProveedor() <= 0) {
-                throw new IllegalArgumentException("Selecciona un proveedor.");
+            if (proveedor == null
+                    || proveedor.getIdProveedor() <= 0) {
+
+                throw new IllegalArgumentException(
+                        "Selecciona un proveedor."
+                );
             }
 
             if (detalles.isEmpty()) {
@@ -253,7 +265,9 @@ public class CompraControlador {
                 );
             }
 
-            Compra compra = construirCompra(proveedor);
+            Compra compra =
+                    construirCompra(proveedor);
+
             validarCompra(compra);
 
             if (compraDAO.existeDocumentoProveedor(
@@ -261,28 +275,35 @@ public class CompraControlador {
                     compra.getNumeroDocumento()
             )) {
                 throw new IllegalArgumentException(
-                        "Ese número de documento ya fue registrado para "
-                        + "el proveedor seleccionado."
+                        "Ese número de documento ya fue registrado "
+                        + "para el proveedor seleccionado."
                 );
             }
 
-            int respuesta = JOptionPane.showConfirmDialog(
-                    vista,
-                    "Se registrará la compra por "
-                    + vista.formatearMoneda(compra.getTotal())
-                    + " y se actualizará el inventario.\n"
-                    + "¿Deseas continuar?",
-                    "Confirmar compra",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE
-            );
+            int respuesta =
+                    JOptionPane.showConfirmDialog(
+                            vista,
+                            "Se registrará la compra por "
+                            + vista.formatearMoneda(
+                                    compra.getTotal()
+                            )
+                            + ".\n"
+                            + "El inventario se actualizará "
+                            + "automáticamente.\n\n"
+                            + "¿Deseas continuar?",
+                            "Confirmar compra",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE
+                    );
 
             if (respuesta != JOptionPane.YES_OPTION) {
                 return;
             }
 
             vista.establecerProcesando(true);
-            int idCompra = compraDAO.registrar(compra);
+
+            int idCompra =
+                    compraDAO.registrar(compra);
 
             JOptionPane.showMessageDialog(
                     vista,
@@ -293,22 +314,27 @@ public class CompraControlador {
                     JOptionPane.INFORMATION_MESSAGE
             );
 
+            cargarCombos();
             nuevaCompra();
             buscarCompras();
             vista.mostrarPestanaHistorial();
 
-        } catch (IllegalArgumentException | IllegalStateException ex) {
+        } catch (IllegalArgumentException
+                | IllegalStateException ex) {
+
             JOptionPane.showMessageDialog(
                     vista,
                     ex.getMessage(),
                     "No se puede registrar la compra",
                     JOptionPane.WARNING_MESSAGE
             );
+
         } catch (SQLException ex) {
             mostrarErrorBaseDatos(
                     "No fue posible registrar la compra.",
                     ex
             );
+
         } finally {
             vista.establecerProcesando(false);
         }
@@ -316,14 +342,19 @@ public class CompraControlador {
 
     public void buscarCompras() {
         try {
-            LocalDate fechaDesde = vista.getFechaDesdeFiltro();
-            LocalDate fechaHasta = vista.getFechaHastaFiltro();
+            LocalDate fechaDesde =
+                    vista.getFechaDesdeFiltro();
+
+            LocalDate fechaHasta =
+                    vista.getFechaHastaFiltro();
 
             if (fechaDesde != null
                     && fechaHasta != null
                     && fechaDesde.isAfter(fechaHasta)) {
+
                 throw new IllegalArgumentException(
-                        "La fecha inicial no puede ser posterior a la final."
+                        "La fecha inicial no puede ser "
+                        + "posterior a la final."
                 );
             }
 
@@ -335,7 +366,9 @@ public class CompraControlador {
             );
 
             vista.mostrarCompras(compras);
-            vista.mostrarCantidadCompras(compras.size());
+            vista.mostrarCantidadCompras(
+                    compras.size()
+            );
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
@@ -344,6 +377,7 @@ public class CompraControlador {
                     "Filtro de compras",
                     JOptionPane.WARNING_MESSAGE
             );
+
         } catch (SQLException ex) {
             mostrarErrorBaseDatos(
                     "No fue posible consultar las compras.",
@@ -353,7 +387,8 @@ public class CompraControlador {
     }
 
     public void verDetalleCompra() {
-        int fila = vista.getFilaCompraSeleccionadaModelo();
+        int fila =
+                vista.getFilaCompraSeleccionadaModelo();
 
         if (fila < 0 || fila >= compras.size()) {
             JOptionPane.showMessageDialog(
@@ -366,9 +401,10 @@ public class CompraControlador {
         }
 
         try {
-            Compra compra = compraDAO.obtenerCompraCompleta(
-                    compras.get(fila).getIdCompra()
-            );
+            Compra compra =
+                    compraDAO.obtenerCompraCompleta(
+                            compras.get(fila).getIdCompra()
+                    );
 
             if (compra == null) {
                 throw new SQLException(
@@ -387,7 +423,8 @@ public class CompraControlador {
     }
 
     public void anularCompra() {
-        int fila = vista.getFilaCompraSeleccionadaModelo();
+        int fila =
+                vista.getFilaCompraSeleccionadaModelo();
 
         if (fila < 0 || fila >= compras.size()) {
             JOptionPane.showMessageDialog(
@@ -401,7 +438,9 @@ public class CompraControlador {
 
         Compra compra = compras.get(fila);
 
-        if (!"REGISTRADA".equalsIgnoreCase(compra.getEstado())) {
+        if (!"REGISTRADA".equalsIgnoreCase(
+                compra.getEstado())) {
+
             JOptionPane.showMessageDialog(
                     vista,
                     "Solo se pueden anular compras registradas.",
@@ -411,15 +450,17 @@ public class CompraControlador {
             return;
         }
 
-        int respuesta = JOptionPane.showConfirmDialog(
-                vista,
-                "La compra #" + compra.getIdCompra()
-                + " será anulada y sus existencias se restarán "
-                + "del inventario.\n¿Deseas continuar?",
-                "Anular compra",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-        );
+        int respuesta =
+                JOptionPane.showConfirmDialog(
+                        vista,
+                        "La compra #" + compra.getIdCompra()
+                        + " será anulada y sus existencias "
+                        + "se restarán del inventario.\n"
+                        + "¿Deseas continuar?",
+                        "Anular compra",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
 
         if (respuesta != JOptionPane.YES_OPTION) {
             return;
@@ -433,11 +474,13 @@ public class CompraControlador {
 
             JOptionPane.showMessageDialog(
                     vista,
-                    "La compra fue anulada y el inventario se revirtió.",
+                    "La compra fue anulada y el inventario "
+                    + "se revirtió.",
                     "Compra anulada",
                     JOptionPane.INFORMATION_MESSAGE
             );
 
+            cargarCombos();
             buscarCompras();
 
         } catch (SQLException ex) {
@@ -448,58 +491,99 @@ public class CompraControlador {
         }
     }
 
-    private Compra construirCompra(Proveedor proveedor) {
+    private Compra construirCompra(
+            Proveedor proveedor) {
+
         Compra compra = new Compra();
-        compra.setIdProveedor(proveedor.getIdProveedor());
-        compra.setNombreProveedor(proveedor.getNombreProveedor());
-        compra.setIdUsuario(Sesion.getIdUsuario());
-        compra.setNombreUsuario(Sesion.getNombreCompleto());
-        compra.setNumeroDocumento(vista.getNumeroDocumento());
 
-        LocalDate fecha = vista.getFechaCompra();
-        LocalTime hora = fecha.equals(LocalDate.now())
-                ? LocalTime.now().withNano(0)
-                : LocalTime.NOON;
+        compra.setIdProveedor(
+                proveedor.getIdProveedor()
+        );
 
-        compra.setFechaCompra(LocalDateTime.of(fecha, hora));
-        compra.setTipoPago(vista.getTipoPago());
-        compra.setObservaciones(vista.getObservaciones());
-        compra.setDetalles(new ArrayList<>(detalles));
-        
+        compra.setNombreProveedor(
+                proveedor.getNombreProveedor()
+        );
+
+        compra.setIdUsuario(
+                Sesion.getIdUsuario()
+        );
+
+        compra.setNombreUsuario(
+                Sesion.getNombreCompleto()
+        );
+
+        compra.setNumeroDocumento(
+                vista.getNumeroDocumento()
+        );
+
+        LocalDate fecha =
+                vista.getFechaCompra();
+
+        LocalTime hora =
+                fecha.equals(LocalDate.now())
+                        ? LocalTime.now().withNano(0)
+                        : LocalTime.NOON;
+
+        compra.setFechaCompra(
+                LocalDateTime.of(fecha, hora)
+        );
+
+        compra.setTipoPago(
+                vista.getTipoPago()
+        );
+
+        compra.setObservaciones(
+                vista.getObservaciones()
+        );
+
+        compra.setDetalles(
+                new ArrayList<>(detalles)
+        );
+
+        /*
+         * El descuento fue eliminado de Compras.
+         * Toda compra nueva se registra con descuento 0.
+         */
+        compra.setDescuento(BigDecimal.ZERO);
+
         compra.setEstado("REGISTRADA");
         compra.recalcularTotales();
+
         return compra;
     }
 
     private void validarCompra(Compra compra) {
-        if (compra.getFechaCompra().toLocalDate().isAfter(LocalDate.now())) {
+        if (compra.getFechaCompra()
+                .toLocalDate()
+                .isAfter(LocalDate.now())) {
+
             throw new IllegalArgumentException(
                     "La fecha de compra no puede estar en el futuro."
             );
         }
 
-        if (compra.getDescuento().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException(
-                    "El descuento no puede ser negativo."
-            );
-        }
+        for (DetalleCompra detalle
+                : compra.getDetalles()) {
 
-        if (compra.getDescuento().compareTo(compra.getSubtotal()) > 0) {
-            throw new IllegalArgumentException(
-                    "El descuento no puede ser mayor que el subtotal."
-            );
-        }
-
-        for (DetalleCompra detalle : compra.getDetalles()) {
             if (detalle.getCantidad() <= 0) {
                 throw new IllegalArgumentException(
-                        "Todas las cantidades deben ser mayores que cero."
+                        "Todas las cantidades deben ser "
+                        + "mayores que cero."
+                );
+            }
+
+            if (detalle.getCostoUnitario()
+                    .compareTo(BigDecimal.ZERO) < 0) {
+
+                throw new IllegalArgumentException(
+                        "Los costos unitarios no pueden ser negativos."
                 );
             }
 
             if (detalle.isManejaNumeroSerie()
                     && detalle.getNumerosSerie().size()
                     != detalle.getCantidad()) {
+
                 throw new IllegalArgumentException(
                         "Faltan números de serie para "
                         + detalle.getNombreProducto() + "."
@@ -508,10 +592,14 @@ public class CompraControlador {
         }
     }
 
-    private void validarSeries(List<String> series, int cantidad) {
+    private void validarSeries(
+            List<String> series,
+            int cantidad) {
+
         if (series.size() != cantidad) {
             throw new IllegalArgumentException(
-                    "Debes ingresar exactamente " + cantidad
+                    "Debes ingresar exactamente "
+                    + cantidad
                     + " números de serie."
             );
         }
@@ -519,88 +607,37 @@ public class CompraControlador {
         Set<String> unicas = new HashSet<>();
 
         for (String serie : series) {
-            String normalizada = serie.trim().toUpperCase();
+            String normalizada =
+                    serie.trim().toUpperCase();
 
-            if (normalizada.isBlank() || !unicas.add(normalizada)) {
+            if (normalizada.isBlank()
+                    || !unicas.add(normalizada)) {
+
                 throw new IllegalArgumentException(
-                        "Los números de serie no pueden estar vacíos "
-                        + "ni repetidos."
+                        "Los números de serie no pueden "
+                        + "estar vacíos ni repetidos."
                 );
             }
         }
     }
 
-    public void recalcularTotales() {
-        actualizarCarrito();
-    }
-
-    private void actualizarCarrito() {
-
+    private void actualizarDetalle() {
         vista.mostrarDetalles(detalles);
-
-        BigDecimal subtotal = detalles.stream()
-                .map(DetalleCompra::getSubtotal)
-                .reduce(
-                        BigDecimal.ZERO,
-                        BigDecimal::add
-                )
-                .setScale(
-                        2,
-                        RoundingMode.HALF_UP
-                );
-
-        BigDecimal descuentoTotal = detalles.stream()
-                .map(DetalleCompra::getDescuentoLinea)
-                .reduce(
-                        BigDecimal.ZERO,
-                        BigDecimal::add
-                )
-                .setScale(
-                        2,
-                        RoundingMode.HALF_UP
-                );
-
-        BigDecimal porcentajeDescuento
-                = subtotal.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : descuentoTotal
-                        .multiply(
-                                BigDecimal.valueOf(100)
-                        )
-                        .divide(
-                                subtotal,
-                                2,
-                                RoundingMode.HALF_UP
-                        );
-
-        BigDecimal total = subtotal
-                .subtract(descuentoTotal)
-                .setScale(
-                        2,
-                        RoundingMode.HALF_UP
-                );
-
-        int unidades = detalles.stream()
-                .mapToInt(DetalleCompra::getCantidad)
-                .sum();
-
-        vista.actualizarResumen(
-                detalles.size(),
-                unidades,
-                subtotal,
-                descuentoTotal,
-                porcentajeDescuento,
-                total
-        );
     }
 
-    private void mostrarErrorBaseDatos(String mensaje, SQLException ex) {
+    private void mostrarErrorBaseDatos(
+            String mensaje,
+            SQLException ex) {
+
         JOptionPane.showMessageDialog(
                 vista,
-                mensaje + "\n\nDetalle: " + ex.getMessage(),
+                mensaje
+                + "\n\nDetalle: "
+                + ex.getMessage(),
                 "Error de base de datos",
                 JOptionPane.ERROR_MESSAGE
         );
+
         ex.printStackTrace();
     }
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Form version="1.5" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
+  <Properties>
+    <Property name="defaultCloseOperation" type="int" value="2"/>
+    <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor"><Dimension value="[1180, 760]"/></Property>
+  </Properties>
+  <SyntheticProperties><SyntheticProperty name="formSizePolicy" type="int" value="1"/><SyntheticProperty name="generateCenter" type="boolean" value="false"/></SyntheticProperties>
+  <AuxValues><AuxValue name="FormSettings_autoResourcing" type="java.lang.Integer" value="0"/><AuxValue name="FormSettings_generateFQN" type="java.lang.Boolean" value="true"/></AuxValues>
+  <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
+  <SubComponents>
+    <Container class="javax.swing.JPanel" name="pnlContenedor">
+      <Properties><Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor"><Color blue="fc" green="f9" red="f7" type="rgb"/></Property></Properties>
+      <Constraints><Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription"><BorderConstraints direction="Center"/></Constraint></Constraints>
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout"/>
+    </Container>
+  </SubComponents>
+</Form>
