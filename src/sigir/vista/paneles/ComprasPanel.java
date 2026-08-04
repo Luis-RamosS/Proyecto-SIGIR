@@ -29,6 +29,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import sigir.componentes.BuscadorSugerencias;
 import sigir.controlador.CompraControlador;
 import sigir.modelo.Compra;
 import sigir.modelo.DetalleCompra;
@@ -50,6 +51,8 @@ public class ComprasPanel extends javax.swing.JPanel {
 
     private final CompraControlador controlador;
     private Producto productoSeleccionado;
+    private Proveedor proveedorSeleccionado;
+    private BuscadorSugerencias<Proveedor> buscadorProveedores;
 
     public ComprasPanel() {
         initComponents();
@@ -58,6 +61,7 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         controlador = new CompraControlador(this);
 
+        configurarBuscadorProveedor();
         configurarEventos();
 
         FiltroTiempoReal.activar(
@@ -150,6 +154,58 @@ public class ComprasPanel extends javax.swing.JPanel {
         tabsCompras.setSelectedIndex(0);
     }
 
+
+    private void configurarBuscadorProveedor() {
+        buscadorProveedores =
+                new BuscadorSugerencias<>(
+                        txtBuscarProveedor,
+                        this::textoVisibleProveedor,
+                        this::textoBusquedaProveedor,
+                        proveedor ->
+                                proveedorSeleccionado = proveedor
+                );
+
+        txtBuscarProveedor.setToolTipText(
+                "Escribe el nombre, RTN, contacto, teléfono o correo."
+        );
+    }
+
+    private String textoVisibleProveedor(
+            Proveedor proveedor) {
+
+        if (proveedor == null) {
+            return "";
+        }
+
+        String nombre =
+                texto(proveedor.getNombreProveedor());
+
+        String rtn =
+                texto(proveedor.getRtn());
+
+        return rtn.isBlank()
+                ? nombre
+                : nombre + " — RTN: " + rtn;
+    }
+
+    private String textoBusquedaProveedor(
+            Proveedor proveedor) {
+
+        if (proveedor == null) {
+            return "";
+        }
+
+        return texto(proveedor.getNombreProveedor())
+                + " "
+                + texto(proveedor.getRtn())
+                + " "
+                + texto(proveedor.getNombreContacto())
+                + " "
+                + texto(proveedor.getTelefono())
+                + " "
+                + texto(proveedor.getCorreo());
+    }
+
     private void aplicarEstilos() {
         Color borde = new Color(220, 227, 236);
         Color azul = new Color(49, 105, 181);
@@ -175,6 +231,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         }
 
         javax.swing.JTextField[] campos = {
+            txtBuscarProveedor,
             txtNumeroDocumento,
             txtFechaCompra,
             txtUsuario,
@@ -341,31 +398,26 @@ public class ComprasPanel extends javax.swing.JPanel {
     public void cargarProveedores(
             List<Proveedor> proveedores) {
 
-        Proveedor seleccionado =
-                getProveedorSeleccionado();
+        int idSeleccionado =
+                proveedorSeleccionado == null
+                        ? 0
+                        : proveedorSeleccionado
+                                .getIdProveedor();
 
-        DefaultComboBoxModel<Proveedor> modelo =
-                new DefaultComboBoxModel<>();
-
-        Proveedor opcion = new Proveedor();
-
-        opcion.setIdProveedor(0);
-        opcion.setNombreProveedor(
-                "Seleccione un proveedor..."
+        buscadorProveedores.setElementos(
+                proveedores
         );
 
-        modelo.addElement(opcion);
-
-        for (Proveedor proveedor : proveedores) {
-            modelo.addElement(proveedor);
-        }
-
-        cmbProveedor.setModel(modelo);
-
-        if (seleccionado != null) {
-            seleccionarProveedor(
-                    seleccionado.getIdProveedor()
-            );
+        if (idSeleccionado > 0) {
+            proveedores.stream()
+                    .filter(proveedor ->
+                            proveedor.getIdProveedor()
+                            == idSeleccionado
+                    )
+                    .findFirst()
+                    .ifPresent(
+                            buscadorProveedores::seleccionar
+                    );
         }
     }
 
@@ -403,12 +455,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     }
 
     public Proveedor getProveedorSeleccionado() {
-        Object seleccionado =
-                cmbProveedor.getSelectedItem();
-
-        return seleccionado instanceof Proveedor proveedor
-                ? proveedor
-                : null;
+        return proveedorSeleccionado;
     }
 
     public Producto getProductoSeleccionado() {
@@ -684,9 +731,8 @@ public class ComprasPanel extends javax.swing.JPanel {
     }
 
     public void limpiarCompra() {
-        if (cmbProveedor.getItemCount() > 0) {
-            cmbProveedor.setSelectedIndex(0);
-        }
+        proveedorSeleccionado = null;
+        buscadorProveedores.limpiar();
 
         txtNumeroDocumento.setText("");
 
@@ -715,6 +761,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         btnAgregarProducto.setEnabled(!procesando);
         btnQuitarProducto.setEnabled(!procesando);
         btnNuevaCompra.setEnabled(!procesando);
+        txtBuscarProveedor.setEnabled(!procesando);
 
         btnGuardarCompra.setText(
                 procesando
@@ -962,26 +1009,6 @@ public class ComprasPanel extends javax.swing.JPanel {
         );
     }
 
-    private void seleccionarProveedor(
-            int idProveedor) {
-
-        for (int i = 0;
-                i < cmbProveedor.getItemCount();
-                i++) {
-
-            Proveedor proveedor =
-                    cmbProveedor.getItemAt(i);
-
-            if (proveedor != null
-                    && proveedor.getIdProveedor()
-                    == idProveedor) {
-
-                cmbProveedor.setSelectedIndex(i);
-                return;
-            }
-        }
-    }
-
     private int convertirEntero(
             String texto,
             String campo) {
@@ -1109,7 +1136,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlDatosCompra = new javax.swing.JPanel();
         lblTituloDatos = new javax.swing.JLabel();
         lblProveedor = new javax.swing.JLabel();
-        cmbProveedor = new javax.swing.JComboBox<>();
+        txtBuscarProveedor = new javax.swing.JTextField();
         lblDocumento = new javax.swing.JLabel();
         txtNumeroDocumento = new javax.swing.JTextField();
         lblFecha = new javax.swing.JLabel();
@@ -1202,12 +1229,12 @@ public class ComprasPanel extends javax.swing.JPanel {
         lblTituloDatos.setBounds(16, 8, 260, 26);
 
         lblProveedor.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        lblProveedor.setText("Proveedor");
+        lblProveedor.setText("Buscar proveedor");
         pnlDatosCompra.add(lblProveedor);
         lblProveedor.setBounds(16, 38, 120, 16);
 
-        pnlDatosCompra.add(cmbProveedor);
-        cmbProveedor.setBounds(16, 56, 310, 36);
+        pnlDatosCompra.add(txtBuscarProveedor);
+        txtBuscarProveedor.setBounds(16, 56, 310, 36);
 
         lblDocumento.setFont(new java.awt.Font("Segoe UI", 1, 11));
         lblDocumento.setText("Documento del proveedor");
@@ -1487,7 +1514,6 @@ public class ComprasPanel extends javax.swing.JPanel {
     private javax.swing.JButton btnNuevaCompra;
     private javax.swing.JButton btnQuitarProducto;
     private javax.swing.JButton btnVerDetalle;
-    private javax.swing.JComboBox<Proveedor> cmbProveedor;
     private javax.swing.JComboBox<String> cmbEstadoHistorial;
     private javax.swing.JComboBox<String> cmbTipoPago;
     private javax.swing.JLabel lblAvisoSeries;
@@ -1530,6 +1556,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     private javax.swing.JTable tblDetalle;
     private javax.swing.JTable tblHistorial;
     private javax.swing.JTextField txtBuscarHistorial;
+    private javax.swing.JTextField txtBuscarProveedor;
     private javax.swing.JTextField txtCantidad;
     private javax.swing.JTextField txtCodigoProducto;
     private javax.swing.JTextField txtCostoUnitario;

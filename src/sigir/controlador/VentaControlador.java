@@ -32,7 +32,7 @@ public class VentaControlador {
         try{
             vista.cargarClientes(dao.listarClientesActivos());
             productos=dao.listarProductosDisponibles();
-            filtrarProductos();
+            vista.cargarProductos(productos);
         }catch(SQLException ex){ error("No fue posible cargar clientes o productos.",ex); }
     }
 
@@ -44,8 +44,7 @@ public class VentaControlador {
     }
 
     public void filtrarProductos(){
-        String f=vista.getTextoBusquedaProducto().toLowerCase();
-        vista.cargarProductos(productos.stream().filter(p -> (texto(p.getCodigo())+" "+texto(p.getNombre())+" "+texto(p.getMarca())+" "+texto(p.getModelo())).toLowerCase().contains(f)).toList());
+        vista.cargarProductos(productos);
     }
 
     public void seleccionarProducto(){

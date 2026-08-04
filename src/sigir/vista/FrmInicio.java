@@ -4,12 +4,10 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
 import javax.swing.BorderFactory;
-import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import sigir.util.Sesion;
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import sigir.vista.paneles.ProductosPanel;
@@ -18,6 +16,16 @@ import sigir.vista.paneles.ProveedoresPanel;
 import sigir.vista.paneles.ComprasPanel;
 import sigir.vista.paneles.InventarioPanel;
 import sigir.vista.paneles.VentasPanel;
+import sigir.vista.paneles.CreditosPanel;
+import sigir.vista.paneles.ReparacionesPanel;
+import sigir.vista.paneles.UsuariosPanel;
+import sigir.vista.paneles.ReportesPanel;
+import javax.swing.JOptionPane;
+import sigir.util.Sesion;
+import sigir.vista.paneles.ConfiguracionPanel;
+import sigir.componentes.BuscadorGlobal;
+import sigir.modelo.ModuloInicio;
+import sigir.vista.paneles.InicioPanel;
 
 /**
  * Pantalla de inicio de SIGIR creada como JFrame Form de NetBeans.
@@ -28,19 +36,46 @@ public class FrmInicio extends javax.swing.JFrame {
     
     private javax.swing.JButton botonMenuActivo;
     private JComponent panelActual;
+    private InicioPanel inicioPanel;
     private ProductosPanel productosPanel;
     private ClientesPanel clientesPanel;
     private ProveedoresPanel proveedoresPanel;
     private ComprasPanel comprasPanel;
     private InventarioPanel inventarioPanel;
     private VentasPanel ventasPanel;
+    private CreditosPanel creditosPanel;
+    private ReparacionesPanel reparacionesPanel;
+    private UsuariosPanel usuariosPanel;
+    private ReportesPanel reportesPanel;
+    private ConfiguracionPanel configuracionPanel;
+    
+    private void limpiarCuadrosDelMenu() {
+
+        lblMarca.setText("SIGIR");
+        lblNotificacion.setText("");
+
+        btnInicio.setText("Inicio");
+        btnVentas.setText("Ventas");
+        btnCompras.setText("Compras");
+        btnProductos.setText("Productos");
+        btnInventario.setText("Inventario");
+        btnClientes.setText("Clientes");
+        btnProveedores.setText("Proveedores");
+        btnCreditos.setText("Créditos");
+        btnReparaciones.setText("Reparaciones");
+        btnUsuarios.setText("Usuarios");
+        btnReportes.setText("Reportes");
+        btnConfiguracion.setText("Configuración");
+
+        lblVersion.setText("SIGIR v1.0.0");
+    }
     
     public FrmInicio() {
 
-        initComponents();    
-        
+        initComponents();
+
         panelActual = pnlContenido;
-        
+
         if (Sesion.haySesionActiva()) {
 
             lblNombreUsuario.setText(
@@ -58,21 +93,53 @@ public class FrmInicio extends javax.swing.JFrame {
                     + "!"
             );
         }
+
         configurarVentana();
         aplicarEstilos();
-        
+        limpiarCuadrosDelMenu();
         configurarBotonCerrarSesion();
-        
-        cargarDatos();
+
         configurarNavegacion();
         configurarPermisos();
-        
-         marcarBotonActivo(btnInicio);
+        configurarBusquedaGlobal();
+
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            btnInicio.doClick();
+        });
     }
 
     public FrmInicio(String usuario) {
         this();
     }
+    
+    private InicioPanel obtenerInicioPanel() {
+
+    if (inicioPanel == null) {
+        inicioPanel = new InicioPanel(modulo -> {
+
+            switch (modulo) {
+                case VENTAS ->
+                    btnVentas.doClick();
+
+                case PRODUCTOS ->
+                    btnProductos.doClick();
+
+                case INVENTARIO ->
+                    btnInventario.doClick();
+
+                case CREDITOS ->
+                    btnCreditos.doClick();
+
+                case REPARACIONES ->
+                    btnReparaciones.doClick();
+            }
+        });
+    }
+
+    return inicioPanel;
+}
+    
+
 
     private void configurarVentana() {
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
@@ -165,6 +232,36 @@ public class FrmInicio extends javax.swing.JFrame {
             btnConfiguracion
         };
     }
+    private void configurarBusquedaGlobal() {
+
+        BuscadorGlobal.instalar(
+                txtBuscar,
+                resultado -> {
+
+                    switch (resultado.getTipo()) {
+
+                        case "PRODUCTO" ->
+                            btnProductos.doClick();
+
+                        case "CLIENTE" ->
+                            btnClientes.doClick();
+
+                        case "VENTA" ->
+                            btnVentas.doClick();
+
+                        case "COMPRA" ->
+                            btnCompras.doClick();
+
+                        case "REPARACION" ->
+                            btnReparaciones.doClick();
+
+                        default -> {
+                        }
+                    }
+                }
+        );
+    }
+    
     
     private void marcarBotonActivo(
         javax.swing.JButton botonSeleccionado) {
@@ -247,22 +344,23 @@ public class FrmInicio extends javax.swing.JFrame {
          */
         btnUsuarios.setVisible(esDueno);
     }
-    private void mostrarPanel(JComponent nuevoPanel) {
+    private void mostrarPanel(
+            javax.swing.JComponent panel) {
 
-    if (panelActual != null) {
-        pnlDerecha.remove(panelActual);
+        pnlContenido.removeAll();
+
+        pnlContenido.setLayout(
+                new java.awt.BorderLayout()
+        );
+
+        pnlContenido.add(
+                panel,
+                java.awt.BorderLayout.CENTER
+        );
+
+        pnlContenido.revalidate();
+        pnlContenido.repaint();
     }
-
-    panelActual = nuevoPanel;
-
-    pnlDerecha.add(
-            panelActual,
-            BorderLayout.CENTER
-    );
-
-    pnlDerecha.revalidate();
-    pnlDerecha.repaint();
-}
     private void aplicarEstilos() {
         Color borde = new Color(222, 228, 236);
         Color azul = new Color(64, 108, 163);
@@ -377,10 +475,12 @@ public class FrmInicio extends javax.swing.JFrame {
 
         btnInicio.addActionListener(e -> {
 
+            InicioPanel panel = obtenerInicioPanel();
+            panel.recargar();
+
             mostrarModulo(
                     btnInicio,
-                    pnlContenido
-            );
+                    obtenerInicioPanel() );
         });
 
         btnCompras.addActionListener(e -> {
@@ -470,28 +570,95 @@ public class FrmInicio extends javax.swing.JFrame {
         });
 
         btnCreditos.addActionListener(e -> {
-            marcarBotonActivo(btnCreditos);
-            abrirModulo("Créditos");
+
+            if (creditosPanel == null) {
+                creditosPanel = new CreditosPanel();
+            } else {
+                creditosPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnCreditos,
+                    creditosPanel
+            );
         });
 
         btnReparaciones.addActionListener(e -> {
-            marcarBotonActivo(btnReparaciones);
-            abrirModulo("Reparaciones");
+
+            if (reparacionesPanel == null) {
+                reparacionesPanel
+                        = new ReparacionesPanel();
+            } else {
+                reparacionesPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnReparaciones,
+                    reparacionesPanel
+            );
         });
 
         btnUsuarios.addActionListener(e -> {
-            marcarBotonActivo(btnUsuarios);
-            abrirModulo("Usuarios");
-        });
 
+            if (!Sesion.esDueno()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Solo el dueño puede administrar usuarios.",
+                        "Acceso restringido",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            if (usuariosPanel == null) {
+                usuariosPanel = new UsuariosPanel();
+            } else {
+                usuariosPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnUsuarios,
+                    usuariosPanel
+            );
+        });
+        
         btnReportes.addActionListener(e -> {
-            marcarBotonActivo(btnReportes);
-            abrirModulo("Reportes");
+
+            if (reportesPanel == null) {
+                reportesPanel = new ReportesPanel();
+            } else {
+                reportesPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnReportes,
+                    reportesPanel
+            );
         });
 
         btnConfiguracion.addActionListener(e -> {
-            marcarBotonActivo(btnConfiguracion);
-            abrirModulo("Configuración");
+
+            if (!Sesion.esDueno()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Solo el dueño puede modificar la configuración.",
+                        "Acceso restringido",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            if (configuracionPanel == null) {
+                configuracionPanel
+                        = new ConfiguracionPanel();
+            } else {
+                configuracionPanel.recargar();
+            }
+
+            mostrarModulo(
+                    btnConfiguracion,
+                    configuracionPanel
+            );
         });
     }
 
