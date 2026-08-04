@@ -487,57 +487,56 @@ public class FrmInicio extends javax.swing.JFrame {
 
             if (comprasPanel == null) {
                 comprasPanel = new ComprasPanel();
-            } else {
-                comprasPanel.recargar();
             }
 
             mostrarModulo(
                     btnCompras,
                     comprasPanel
             );
+
+            comprasPanel.activar();
         });
 
         btnProductos.addActionListener(e -> {
 
             if (productosPanel == null) {
                 productosPanel = new ProductosPanel();
-            } else {
-                productosPanel.recargar();
             }
 
             mostrarModulo(
                     btnProductos,
                     productosPanel
             );
+
+            productosPanel.activar();
         });
 
         btnInventario.addActionListener(e -> {
 
             if (inventarioPanel == null) {
-                inventarioPanel
-                        = new InventarioPanel();
-            } else {
-                inventarioPanel.recargar();
+                inventarioPanel = new InventarioPanel();
             }
 
             mostrarModulo(
                     btnInventario,
                     inventarioPanel
             );
-        });
 
+            inventarioPanel.activar();
+        });
+        
         btnClientes.addActionListener(e -> {
 
             if (clientesPanel == null) {
                 clientesPanel = new ClientesPanel();
-            } else {
-                clientesPanel.recargar();
             }
 
             mostrarModulo(
                     btnClientes,
                     clientesPanel
             );
+
+            clientesPanel.activar();
         });
 
         btnProveedores.addActionListener(e -> {
@@ -545,57 +544,54 @@ public class FrmInicio extends javax.swing.JFrame {
             if (proveedoresPanel == null) {
                 proveedoresPanel
                         = new ProveedoresPanel();
-            } else {
-                proveedoresPanel.recargar();
-            }
+            } 
 
             mostrarModulo(
                     btnProveedores,
                     proveedoresPanel
             );
+            proveedoresPanel.activar();
         });
 
         btnVentas.addActionListener(e -> {
 
             if (ventasPanel == null) {
                 ventasPanel = new VentasPanel();
-            } else {
-                ventasPanel.recargar();
-            }
+            } 
 
             mostrarModulo(
                     btnVentas,
                     ventasPanel
             );
+            ventasPanel.activar();
         });
 
         btnCreditos.addActionListener(e -> {
 
             if (creditosPanel == null) {
                 creditosPanel = new CreditosPanel();
-            } else {
-                creditosPanel.recargar();
             }
 
             mostrarModulo(
                     btnCreditos,
                     creditosPanel
             );
+
+            creditosPanel.activar();
         });
 
         btnReparaciones.addActionListener(e -> {
 
             if (reparacionesPanel == null) {
-                reparacionesPanel
-                        = new ReparacionesPanel();
-            } else {
-                reparacionesPanel.recargar();
+                reparacionesPanel = new ReparacionesPanel();
             }
 
             mostrarModulo(
                     btnReparaciones,
                     reparacionesPanel
             );
+
+            reparacionesPanel.activar();
         });
 
         btnUsuarios.addActionListener(e -> {
@@ -612,28 +608,27 @@ public class FrmInicio extends javax.swing.JFrame {
 
             if (usuariosPanel == null) {
                 usuariosPanel = new UsuariosPanel();
-            } else {
-                usuariosPanel.recargar();
             }
 
             mostrarModulo(
                     btnUsuarios,
                     usuariosPanel
             );
+            usuariosPanel.activar();
         });
         
         btnReportes.addActionListener(e -> {
 
             if (reportesPanel == null) {
                 reportesPanel = new ReportesPanel();
-            } else {
-                reportesPanel.recargar();
             }
 
             mostrarModulo(
                     btnReportes,
                     reportesPanel
             );
+
+            reportesPanel.activar();
         });
 
         btnConfiguracion.addActionListener(e -> {
@@ -649,16 +644,15 @@ public class FrmInicio extends javax.swing.JFrame {
             }
 
             if (configuracionPanel == null) {
-                configuracionPanel
-                        = new ConfiguracionPanel();
-            } else {
-                configuracionPanel.recargar();
+                configuracionPanel = new ConfiguracionPanel();
             }
 
             mostrarModulo(
                     btnConfiguracion,
                     configuracionPanel
             );
+
+            configuracionPanel.activar();
         });
     }
 

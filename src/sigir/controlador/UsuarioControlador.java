@@ -1,10 +1,14 @@
 package sigir.controlador;
 
+import java.awt.Cursor;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import sigir.dao.GestionUsuarioDAO;
 import sigir.modelo.RolSistema;
 import sigir.modelo.UsuarioGestion;
@@ -23,6 +27,40 @@ public class UsuarioControlador {
     private List<RolSistema> roles =
             new ArrayList<>();
 
+    private SwingWorker<DatosCarga, Void>
+            trabajadorCarga;
+
+    private SwingWorker<List<UsuarioGestion>, Void>
+            trabajadorBusqueda;
+
+    private long ultimaCarga;
+    private long versionBusqueda;
+    private boolean recargaPendiente;
+
+    private static final long VIGENCIA_DATOS_MS =
+            30_000;
+
+    private record Indicadores(
+            int total,
+            int activos,
+            int bloqueados
+    ) {
+    }
+
+    private record DatosCarga(
+            List<RolSistema> roles,
+            List<UsuarioGestion> usuarios,
+            Indicadores indicadores
+    ) {
+    }
+
+    private record FiltroUsuarios(
+            String texto,
+            Integer idRol,
+            String estado
+    ) {
+    }
+
     public UsuarioControlador(
             UsuariosPanel vista) {
 
@@ -30,40 +68,175 @@ public class UsuarioControlador {
         this.dao = new GestionUsuarioDAO();
     }
 
-    public void iniciar() {
+    public void iniciarAsync() {
         if (!Sesion.esDueno()) {
             vista.mostrarSinAcceso();
             return;
         }
 
-        cargarRoles();
         nuevoUsuario();
-        buscarUsuarios();
-        actualizarIndicadores();
+        cargarTodoAsync();
+    }
+
+    public void recargarAsync() {
+        if (!Sesion.esDueno()) {
+            vista.mostrarSinAcceso();
+            return;
+        }
+
+        cargarTodoAsync();
+    }
+
+    public void iniciar() {
+        iniciarAsync();
     }
 
     public void recargar() {
+        recargarAsync();
+    }
+
+    public void recargarSiNecesario() {
         if (!Sesion.esDueno()) {
             vista.mostrarSinAcceso();
             return;
         }
 
-        cargarRoles();
-        buscarUsuarios();
-        actualizarIndicadores();
+        long tiempoTranscurrido =
+                System.currentTimeMillis()
+                - ultimaCarga;
+
+        if (tiempoTranscurrido
+                >= VIGENCIA_DATOS_MS) {
+
+            cargarTodoAsync();
+        }
     }
 
-    private void cargarRoles() {
-        try {
-            roles = dao.listarRolesActivos();
-            vista.cargarRoles(roles);
+    private void cargarTodoAsync() {
+        if (trabajadorCarga != null
+                && !trabajadorCarga.isDone()) {
 
-        } catch (SQLException ex) {
-            mostrarError(
-                    "No fue posible cargar los roles.",
-                    ex
-            );
+            recargaPendiente = true;
+            return;
         }
+
+        final FiltroUsuarios filtro =
+                capturarFiltro();
+
+        recargaPendiente = false;
+
+        if (trabajadorBusqueda != null
+                && !trabajadorBusqueda.isDone()) {
+
+            trabajadorBusqueda.cancel(true);
+        }
+
+        final long versionCarga =
+                ++versionBusqueda;
+
+        vista.setCursor(
+                Cursor.getPredefinedCursor(
+                        Cursor.WAIT_CURSOR
+                )
+        );
+
+        trabajadorCarga =
+                new SwingWorker<>() {
+
+            @Override
+            protected DatosCarga doInBackground()
+                    throws Exception {
+
+                List<RolSistema> rolesCargados =
+                        dao.listarRolesActivos();
+
+                List<UsuarioGestion> usuariosCargados =
+                        dao.listarUsuarios(
+                                filtro.texto(),
+                                filtro.idRol(),
+                                filtro.estado()
+                        );
+
+                int[] valores =
+                        dao.contarIndicadores();
+
+                return new DatosCarga(
+                        rolesCargados,
+                        usuariosCargados,
+                        new Indicadores(
+                                valores[0],
+                                valores[1],
+                                valores[2]
+                        )
+                );
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    DatosCarga datos = get();
+
+                    roles =
+                            new ArrayList<>(
+                                    datos.roles()
+                            );
+
+                    vista.cargarRoles(roles);
+
+                    if (versionCarga
+                            == versionBusqueda) {
+
+                        usuarios =
+                                new ArrayList<>(
+                                        datos.usuarios()
+                                );
+
+                        vista.mostrarUsuarios(
+                                usuarios
+                        );
+                    }
+
+                    vista.actualizarIndicadores(
+                            datos.indicadores().total(),
+                            datos.indicadores().activos(),
+                            datos.indicadores().bloqueados()
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (CancellationException ex) {
+                    // La carga fue cancelada.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    mostrarError(
+                            "No fue posible cargar "
+                            + "el módulo de usuarios.",
+                            causa
+                    );
+
+                } finally {
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+
+                    if (recargaPendiente) {
+                        cargarTodoAsync();
+                    }
+                }
+            }
+        };
+
+        trabajadorCarga.execute();
     }
 
     public void buscarUsuarios() {
@@ -71,21 +244,86 @@ public class UsuarioControlador {
             return;
         }
 
-        try {
-            usuarios = dao.listarUsuarios(
-                    vista.getTextoBusqueda(),
-                    vista.getIdRolFiltro(),
-                    vista.getEstadoFiltro()
-            );
+        final FiltroUsuarios filtro =
+                capturarFiltro();
 
-            vista.mostrarUsuarios(usuarios);
+        final long versionActual =
+                ++versionBusqueda;
 
-        } catch (SQLException ex) {
-            mostrarError(
-                    "No fue posible consultar los usuarios.",
-                    ex
-            );
+        if (trabajadorBusqueda != null
+                && !trabajadorBusqueda.isDone()) {
+
+            trabajadorBusqueda.cancel(true);
         }
+
+        trabajadorBusqueda =
+                new SwingWorker<>() {
+
+            @Override
+            protected List<UsuarioGestion>
+                    doInBackground()
+                    throws Exception {
+
+                return dao.listarUsuarios(
+                        filtro.texto(),
+                        filtro.idRol(),
+                        filtro.estado()
+                );
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled()
+                        || versionActual
+                        != versionBusqueda) {
+
+                    return;
+                }
+
+                try {
+                    usuarios =
+                            new ArrayList<>(
+                                    get()
+                            );
+
+                    vista.mostrarUsuarios(
+                            usuarios
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (CancellationException ex) {
+                    // La búsqueda fue reemplazada.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    mostrarError(
+                            "No fue posible consultar "
+                            + "los usuarios.",
+                            causa
+                    );
+                }
+            }
+        };
+
+        trabajadorBusqueda.execute();
+    }
+
+    private FiltroUsuarios capturarFiltro() {
+        return new FiltroUsuarios(
+                vista.getTextoBusqueda(),
+                vista.getIdRolFiltro(),
+                vista.getEstadoFiltro()
+        );
     }
 
     public void seleccionarUsuario() {
@@ -117,7 +355,8 @@ public class UsuarioControlador {
         try {
             if (!Sesion.esDueno()) {
                 throw new IllegalStateException(
-                        "Solo el dueño puede administrar usuarios."
+                        "Solo el dueño puede "
+                        + "administrar usuarios."
                 );
             }
 
@@ -141,7 +380,8 @@ public class UsuarioControlador {
                     usuario.getIdUsuario())) {
 
                 throw new IllegalArgumentException(
-                        "El nombre de usuario ya está registrado."
+                        "El nombre de usuario "
+                        + "ya está registrado."
                 );
             }
 
@@ -150,7 +390,8 @@ public class UsuarioControlador {
                     usuario.getIdUsuario())) {
 
                 throw new IllegalArgumentException(
-                        "El correo electrónico ya está registrado."
+                        "El correo electrónico "
+                        + "ya está registrado."
                 );
             }
 
@@ -188,14 +429,15 @@ public class UsuarioControlador {
 
                 JOptionPane.showMessageDialog(
                         vista,
-                        "Los datos del usuario fueron actualizados.",
+                        "Los datos del usuario "
+                        + "fueron actualizados.",
                         "Usuario actualizado",
                         JOptionPane.INFORMATION_MESSAGE
                 );
             }
 
             nuevoUsuario();
-            recargar();
+            recargarAsync();
 
         } catch (IllegalArgumentException
                 | IllegalStateException ex) {
@@ -209,13 +451,21 @@ public class UsuarioControlador {
 
         } catch (SQLException ex) {
             mostrarError(
-                    "No fue posible guardar el usuario.",
+                    "No fue posible guardar "
+                    + "el usuario.",
                     ex
             );
 
         } finally {
-            Arrays.fill(contrasena, '\0');
-            Arrays.fill(confirmacion, '\0');
+            Arrays.fill(
+                    contrasena,
+                    '\0'
+            );
+
+            Arrays.fill(
+                    confirmacion,
+                    '\0'
+            );
         }
     }
 
@@ -250,11 +500,14 @@ public class UsuarioControlador {
             );
 
             UsuarioGestion usuario =
-                    buscarUsuarioPorId(idUsuario);
+                    buscarUsuarioPorId(
+                            idUsuario
+                    );
 
             if (usuario == null) {
                 throw new IllegalArgumentException(
-                        "El usuario seleccionado ya no está disponible."
+                        "El usuario seleccionado "
+                        + "ya no está disponible."
                 );
             }
 
@@ -279,7 +532,9 @@ public class UsuarioControlador {
             }
 
             String hash =
-                    PasswordUtil.generarHash(nueva);
+                    PasswordUtil.generarHash(
+                            nueva
+                    );
 
             dao.restablecerContrasena(
                     idUsuario,
@@ -288,12 +543,13 @@ public class UsuarioControlador {
 
             JOptionPane.showMessageDialog(
                     vista,
-                    "La contraseña fue restablecida correctamente.",
+                    "La contraseña fue restablecida "
+                    + "correctamente.",
                     "Contraseña actualizada",
                     JOptionPane.INFORMATION_MESSAGE
             );
 
-            recargar();
+            recargarAsync();
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
@@ -305,13 +561,21 @@ public class UsuarioControlador {
 
         } catch (SQLException ex) {
             mostrarError(
-                    "No fue posible restablecer la contraseña.",
+                    "No fue posible restablecer "
+                    + "la contraseña.",
                     ex
             );
 
         } finally {
-            Arrays.fill(nueva, '\0');
-            Arrays.fill(confirmacion, '\0');
+            Arrays.fill(
+                    nueva,
+                    '\0'
+            );
+
+            Arrays.fill(
+                    confirmacion,
+                    '\0'
+            );
         }
     }
 
@@ -324,7 +588,8 @@ public class UsuarioControlador {
                         .length() < 5) {
 
             throw new IllegalArgumentException(
-                    "Escribe el nombre completo del usuario."
+                    "Escribe el nombre completo "
+                    + "del usuario."
             );
         }
 
@@ -335,9 +600,11 @@ public class UsuarioControlador {
                         )) {
 
             throw new IllegalArgumentException(
-                    "El nombre de usuario debe tener entre "
-                    + "4 y 50 caracteres y solo puede incluir "
-                    + "letras, números, punto, guion o guion bajo."
+                    "El nombre de usuario debe tener "
+                    + "entre 4 y 50 caracteres y "
+                    + "solo puede incluir letras, "
+                    + "números, punto, guion "
+                    + "o guion bajo."
             );
         }
 
@@ -350,7 +617,8 @@ public class UsuarioControlador {
                         )) {
 
             throw new IllegalArgumentException(
-                    "Escribe un correo electrónico válido."
+                    "Escribe un correo "
+                    + "electrónico válido."
             );
         }
 
@@ -365,7 +633,9 @@ public class UsuarioControlador {
                         "ACTIVO",
                         "INACTIVO",
                         "BLOQUEADO"
-                ).contains(usuario.getEstado())) {
+                ).contains(
+                        usuario.getEstado()
+                )) {
 
             throw new IllegalArgumentException(
                     "Selecciona un estado válido."
@@ -391,8 +661,8 @@ public class UsuarioControlador {
                     nuevoValor.getEstado())) {
 
                 throw new IllegalArgumentException(
-                        "No puedes desactivar o bloquear "
-                        + "tu propia cuenta."
+                        "No puedes desactivar o "
+                        + "bloquear tu propia cuenta."
                 );
             }
 
@@ -424,12 +694,15 @@ public class UsuarioControlador {
                 && dao.contarDuenosActivos() <= 1) {
 
             throw new IllegalArgumentException(
-                    "Debe permanecer al menos un dueño activo."
+                    "Debe permanecer al menos "
+                    + "un dueño activo."
             );
         }
     }
 
-    private boolean esRolDueno(int idRol) {
+    private boolean esRolDueno(
+            int idRol) {
+
         return roles.stream()
                 .anyMatch(rol ->
                         rol.getIdRol() == idRol
@@ -493,8 +766,9 @@ public class UsuarioControlador {
                 || !simbolo) {
 
             throw new IllegalArgumentException(
-                    "La contraseña debe incluir mayúscula, "
-                    + "minúscula, número y símbolo."
+                    "La contraseña debe incluir "
+                    + "mayúscula, minúscula, "
+                    + "número y símbolo."
             );
         }
     }
@@ -515,35 +789,25 @@ public class UsuarioControlador {
                 .orElse(null);
     }
 
-    private void actualizarIndicadores() {
-        try {
-            vista.actualizarIndicadores(
-                    dao.contarTodos(),
-                    dao.contarEstado("ACTIVO"),
-                    dao.contarEstado("BLOQUEADO")
-            );
-
-        } catch (SQLException ex) {
-            mostrarError(
-                    "No fue posible actualizar los indicadores.",
-                    ex
-            );
-        }
-    }
-
     private void mostrarError(
             String mensaje,
-            SQLException ex) {
+            Throwable ex) {
 
         JOptionPane.showMessageDialog(
                 vista,
                 mensaje
                 + "\n\nDetalle: "
-                + ex.getMessage(),
+                + (
+                    ex == null
+                            ? "Error desconocido"
+                            : ex.getMessage()
+                ),
                 "Error de base de datos",
                 JOptionPane.ERROR_MESSAGE
         );
 
-        ex.printStackTrace();
+        if (ex != null) {
+            ex.printStackTrace();
+        }
     }
 }

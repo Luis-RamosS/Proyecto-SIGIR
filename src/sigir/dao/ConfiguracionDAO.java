@@ -10,7 +10,26 @@ public class ConfiguracionDAO {
 
     private static final int ID_CONFIGURACION = 1;
 
+    private volatile boolean estructuraAsegurada;
+
     public void asegurarEstructura()
+            throws SQLException {
+
+        if (estructuraAsegurada) {
+            return;
+        }
+
+        synchronized (this) {
+            if (estructuraAsegurada) {
+                return;
+            }
+
+            asegurarEstructuraInterna();
+            estructuraAsegurada = true;
+        }
+    }
+
+    private void asegurarEstructuraInterna()
             throws SQLException {
 
         String sql = """
@@ -578,6 +597,8 @@ public class ConfiguracionDAO {
             sentencia.setQueryTimeout(0);
             sentencia.execute(sql);
         }
+
+        estructuraAsegurada = false;
     }
 
     private void asegurarDueno(

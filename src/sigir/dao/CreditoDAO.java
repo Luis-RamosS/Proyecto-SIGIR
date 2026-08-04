@@ -1,8 +1,14 @@
 package sigir.dao;
 
 import java.math.BigDecimal;
-import java.sql.*;
-import java.time.LocalDate;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import sigir.conexion.ConexionBD;
@@ -13,7 +19,8 @@ public class CreditoDAO {
 
     public List<Credito> listar(String filtro, String estado) throws SQLException {
         String texto = filtro == null ? "" : filtro.trim();
-        String estadoFiltro = estado == null || estado.isBlank() || "TODOS".equalsIgnoreCase(estado)
+        String estadoFiltro = estado == null || estado.isBlank()
+                || "TODOS".equalsIgnoreCase(estado)
                 ? null : estado.trim().toUpperCase();
 
         String sql = """
@@ -32,17 +39,15 @@ public class CreditoDAO {
                     CASE
                         WHEN cr.estado = 'PENDIENTE'
                          AND cr.fecha_vencimiento IS NOT NULL
-                         AND cr.fecha_vencimiento < CAST(GETDATE() AS DATE)
+                         AND cr.fecha_vencimiento < CONVERT(date, GETDATE())
                          AND cr.saldo_pendiente > 0
                         THEN 'VENCIDO'
                         ELSE cr.estado
                     END AS estado_visual,
                     cr.observaciones
                 FROM dbo.creditos AS cr
-                INNER JOIN dbo.ventas AS v
-                    ON v.id_venta = cr.id_venta
-                INNER JOIN dbo.clientes AS c
-                    ON c.id_cliente = cr.id_cliente
+                INNER JOIN dbo.ventas AS v ON v.id_venta = cr.id_venta
+                INNER JOIN dbo.clientes AS c ON c.id_cliente = cr.id_cliente
                 WHERE
                     (
                         ? = ''
@@ -58,7 +63,7 @@ public class CreditoDAO {
                         CASE
                             WHEN cr.estado = 'PENDIENTE'
                              AND cr.fecha_vencimiento IS NOT NULL
-                             AND cr.fecha_vencimiento < CAST(GETDATE() AS DATE)
+                             AND cr.fecha_vencimiento < CONVERT(date, GETDATE())
                              AND cr.saldo_pendiente > 0
                             THEN 'VENCIDO'
                             ELSE cr.estado
@@ -75,7 +80,9 @@ public class CreditoDAO {
         try (Connection cn = ConexionBD.obtenerConexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
 
-            for (int i = 1; i <= 5; i++) ps.setString(i, texto);
+            for (int i = 1; i <= 5; i++) {
+                ps.setString(i, texto);
+            }
 
             if (estadoFiltro == null) {
                 ps.setNull(6, Types.VARCHAR);
@@ -86,7 +93,9 @@ public class CreditoDAO {
             }
 
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) lista.add(mapearCredito(rs));
+                while (rs.next()) {
+                    lista.add(mapearCredito(rs));
+                }
             }
         }
 
@@ -94,9 +103,46 @@ public class CreditoDAO {
     }
 
     public List<Credito> listarDisponiblesParaAbono() throws SQLException {
-        return listar("", "PENDIENTE").stream()
-                .filter(c -> c.getSaldoPendiente().signum() > 0)
-                .toList();
+        String sql = """
+                SELECT
+                    cr.id_credito,
+                    cr.id_venta,
+                    cr.id_cliente,
+                    v.numero_factura,
+                    c.nombre_completo AS nombre_cliente,
+                    c.numero_identidad,
+                    cr.fecha_inicio,
+                    cr.fecha_vencimiento,
+                    cr.total_credito,
+                    cr.saldo_pendiente,
+                    cr.monto_cuota,
+                    CASE
+                        WHEN cr.fecha_vencimiento IS NOT NULL
+                         AND cr.fecha_vencimiento < CONVERT(date, GETDATE())
+                        THEN 'VENCIDO'
+                        ELSE 'PENDIENTE'
+                    END AS estado_visual,
+                    cr.observaciones
+                FROM dbo.creditos AS cr
+                INNER JOIN dbo.ventas AS v ON v.id_venta = cr.id_venta
+                INNER JOIN dbo.clientes AS c ON c.id_cliente = cr.id_cliente
+                WHERE cr.estado = 'PENDIENTE'
+                  AND cr.saldo_pendiente > 0
+                ORDER BY cr.fecha_vencimiento, c.nombre_completo, cr.id_credito;
+                """;
+
+        List<Credito> lista = new ArrayList<>();
+
+        try (Connection cn = ConexionBD.obtenerConexion();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(mapearCredito(rs));
+            }
+        }
+
+        return lista;
     }
 
     public List<AbonoCredito> listarAbonos(String filtro) throws SQLException {
@@ -116,19 +162,15 @@ public class CreditoDAO {
                     a.referencia,
                     a.observaciones
                 FROM dbo.abonos_credito AS a
-                INNER JOIN dbo.creditos AS cr
-                    ON cr.id_credito = a.id_credito
-                INNER JOIN dbo.ventas AS v
-                    ON v.id_venta = cr.id_venta
-                INNER JOIN dbo.clientes AS c
-                    ON c.id_cliente = cr.id_cliente
-                INNER JOIN dbo.usuarios AS u
-                    ON u.id_usuario = a.id_usuario
+                INNER JOIN dbo.creditos AS cr ON cr.id_credito = a.id_credito
+                INNER JOIN dbo.ventas AS v ON v.id_venta = cr.id_venta
+                INNER JOIN dbo.clientes AS c ON c.id_cliente = cr.id_cliente
+                INNER JOIN dbo.usuarios AS u ON u.id_usuario = a.id_usuario
                 WHERE
                     ? = ''
                     OR c.nombre_completo LIKE '%' + ? + '%'
                     OR v.numero_factura LIKE '%' + ? + '%'
-                    OR a.referencia LIKE '%' + ? + '%'
+                    OR ISNULL(a.referencia, '') LIKE '%' + ? + '%'
                 ORDER BY a.fecha_abono DESC, a.id_abono DESC;
                 """;
 
@@ -137,7 +179,9 @@ public class CreditoDAO {
         try (Connection cn = ConexionBD.obtenerConexion();
              PreparedStatement ps = cn.prepareStatement(sql)) {
 
-            for (int i = 1; i <= 4; i++) ps.setString(i, texto);
+            for (int i = 1; i <= 4; i++) {
+                ps.setString(i, texto);
+            }
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -148,8 +192,12 @@ public class CreditoDAO {
                     a.setNombreUsuario(rs.getString("nombre_usuario"));
                     a.setNombreCliente(rs.getString("nombre_cliente"));
                     a.setNumeroFactura(rs.getString("numero_factura"));
-                    Timestamp f = rs.getTimestamp("fecha_abono");
-                    if (f != null) a.setFechaAbono(f.toLocalDateTime());
+
+                    Timestamp fecha = rs.getTimestamp("fecha_abono");
+                    if (fecha != null) {
+                        a.setFechaAbono(fecha.toLocalDateTime());
+                    }
+
                     a.setMonto(rs.getBigDecimal("monto"));
                     a.setMetodoPago(rs.getString("metodo_pago"));
                     a.setReferencia(rs.getString("referencia"));
@@ -196,41 +244,50 @@ public class CreditoDAO {
         }
     }
 
-    public int contarPendientes() throws SQLException {
-        return contarPorEstado("PENDIENTE");
-    }
-
-    public int contarPagados() throws SQLException {
-        return contarPorEstado("PAGADO");
-    }
-
-    public int contarVencidos() throws SQLException {
+    public int[] contarIndicadores() throws SQLException {
         String sql = """
-                SELECT COUNT(*)
-                FROM dbo.creditos
-                WHERE estado = 'PENDIENTE'
-                  AND saldo_pendiente > 0
-                  AND fecha_vencimiento IS NOT NULL
-                  AND fecha_vencimiento < CAST(GETDATE() AS DATE);
+                SELECT
+                    SUM(CASE
+                        WHEN estado = 'PENDIENTE' AND saldo_pendiente > 0
+                        THEN 1 ELSE 0 END) AS pendientes,
+                    SUM(CASE
+                        WHEN estado = 'PENDIENTE'
+                         AND saldo_pendiente > 0
+                         AND fecha_vencimiento IS NOT NULL
+                         AND fecha_vencimiento < CONVERT(date, GETDATE())
+                        THEN 1 ELSE 0 END) AS vencidos,
+                    SUM(CASE
+                        WHEN estado = 'PAGADO'
+                        THEN 1 ELSE 0 END) AS pagados
+                FROM dbo.creditos;
                 """;
 
         try (Connection cn = ConexionBD.obtenerConexion();
              PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            return rs.next() ? rs.getInt(1) : 0;
+
+            if (!rs.next()) {
+                return new int[]{0, 0, 0};
+            }
+
+            return new int[]{
+                rs.getInt("pendientes"),
+                rs.getInt("vencidos"),
+                rs.getInt("pagados")
+            };
         }
     }
 
-    private int contarPorEstado(String estado) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM dbo.creditos WHERE estado = ?;";
+    public int contarPendientes() throws SQLException {
+        return contarIndicadores()[0];
+    }
 
-        try (Connection cn = ConexionBD.obtenerConexion();
-             PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, estado);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        }
+    public int contarVencidos() throws SQLException {
+        return contarIndicadores()[1];
+    }
+
+    public int contarPagados() throws SQLException {
+        return contarIndicadores()[2];
     }
 
     private Credito mapearCredito(ResultSet rs) throws SQLException {
@@ -241,10 +298,17 @@ public class CreditoDAO {
         c.setNumeroFactura(rs.getString("numero_factura"));
         c.setNombreCliente(rs.getString("nombre_cliente"));
         c.setNumeroIdentidad(rs.getString("numero_identidad"));
-        Date fi = rs.getDate("fecha_inicio");
-        if (fi != null) c.setFechaInicio(fi.toLocalDate());
-        Date fv = rs.getDate("fecha_vencimiento");
-        if (fv != null) c.setFechaVencimiento(fv.toLocalDate());
+
+        Date fechaInicio = rs.getDate("fecha_inicio");
+        if (fechaInicio != null) {
+            c.setFechaInicio(fechaInicio.toLocalDate());
+        }
+
+        Date fechaVencimiento = rs.getDate("fecha_vencimiento");
+        if (fechaVencimiento != null) {
+            c.setFechaVencimiento(fechaVencimiento.toLocalDate());
+        }
+
         c.setTotalCredito(rs.getBigDecimal("total_credito"));
         c.setSaldoPendiente(rs.getBigDecimal("saldo_pendiente"));
         c.setMontoCuota(rs.getBigDecimal("monto_cuota"));

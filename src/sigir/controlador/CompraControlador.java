@@ -9,7 +9,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.awt.Cursor;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import sigir.dao.CompraDAO;
 import sigir.modelo.Compra;
 import sigir.modelo.DetalleCompra;
@@ -32,37 +36,197 @@ public class CompraControlador {
     private List<Compra> compras =
             new ArrayList<>();
 
+    private SwingWorker<DatosCarga, Void> trabajadorCarga;
+    private SwingWorker<List<Compra>, Void> trabajadorBusqueda;
+
+    private long ultimaCarga;
+    private long versionBusqueda;
+    private boolean recargaPendiente;
+
+    private static final long VIGENCIA_DATOS_MS =
+            30_000;
+
+    private record DatosCarga(
+            List<Proveedor> proveedores,
+            List<Producto> productos,
+            List<Compra> compras
+    ) {
+    }
+
+    private record FiltrosHistorial(
+            String texto,
+            LocalDate desde,
+            LocalDate hasta,
+            String estado
+    ) {
+    }
+
     public CompraControlador(ComprasPanel vista) {
         this.vista = vista;
         this.compraDAO = new CompraDAO();
     }
 
-    public void iniciar() {
-        cargarCombos();
+    public void iniciarAsync() {
         nuevaCompra();
-        buscarCompras();
+        cargarAsync();
+    }
+
+    public void recargarAsync() {
+        cargarAsync();
     }
 
     public void recargar() {
-        cargarCombos();
-        buscarCompras();
+        recargarAsync();
     }
 
-    private void cargarCombos() {
+    public void recargarSiNecesario() {
+        long transcurrido =
+                System.currentTimeMillis()
+                - ultimaCarga;
+
+        if (transcurrido >= VIGENCIA_DATOS_MS) {
+            cargarAsync();
+        }
+    }
+
+    private void cargarAsync() {
+        if (trabajadorCarga != null
+                && !trabajadorCarga.isDone()) {
+
+            recargaPendiente = true;
+            return;
+        }
+
+        final FiltrosHistorial filtros;
+
         try {
-            vista.cargarProveedores(
-                    compraDAO.listarProveedoresActivos()
-            );
+            filtros = capturarFiltrosHistorial();
+        } catch (IllegalArgumentException ex) {
+            mostrarAvisoFiltro(ex.getMessage());
+            return;
+        }
 
-            productosDisponibles =
-                    compraDAO.listarProductosDisponibles();
+        recargaPendiente = false;
 
-        } catch (SQLException ex) {
-            mostrarErrorBaseDatos(
-                    "No fue posible cargar proveedores o productos.",
-                    ex
+        vista.setCursor(
+                Cursor.getPredefinedCursor(
+                        Cursor.WAIT_CURSOR
+                )
+        );
+
+        trabajadorCarga =
+                new SwingWorker<>() {
+
+            @Override
+            protected DatosCarga doInBackground()
+                    throws Exception {
+
+                List<Proveedor> proveedores =
+                        compraDAO.listarProveedoresActivos();
+
+                List<Producto> productos =
+                        compraDAO.listarProductosDisponibles();
+
+                List<Compra> comprasCargadas =
+                        compraDAO.listarCompras(
+                                filtros.texto(),
+                                filtros.desde(),
+                                filtros.hasta(),
+                                filtros.estado()
+                        );
+
+                return new DatosCarga(
+                        proveedores,
+                        productos,
+                        comprasCargadas
+                );
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    DatosCarga datos = get();
+
+                    productosDisponibles =
+                            new ArrayList<>(
+                                    datos.productos()
+                            );
+
+                    compras =
+                            new ArrayList<>(
+                                    datos.compras()
+                            );
+
+                    vista.cargarProveedores(
+                            datos.proveedores()
+                    );
+
+                    vista.mostrarCompras(compras);
+
+                    vista.mostrarCantidadCompras(
+                            compras.size()
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (CancellationException ex) {
+                    // La carga fue cancelada.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    mostrarErrorBaseDatos(
+                            "No fue posible cargar "
+                            + "el módulo de compras.",
+                            causa
+                    );
+
+                } finally {
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+
+                    if (recargaPendiente) {
+                        cargarAsync();
+                    }
+                }
+            }
+        };
+
+        trabajadorCarga.execute();
+    }
+
+    private FiltrosHistorial capturarFiltrosHistorial() {
+        LocalDate fechaDesde =
+                vista.getFechaDesdeFiltro();
+
+        LocalDate fechaHasta =
+                vista.getFechaHastaFiltro();
+
+        if (fechaDesde != null
+                && fechaHasta != null
+                && fechaDesde.isAfter(fechaHasta)) {
+
+            throw new IllegalArgumentException(
+                    "La fecha inicial no puede ser "
+                    + "posterior a la final."
             );
         }
+
+        return new FiltrosHistorial(
+                vista.getTextoBusquedaHistorial(),
+                fechaDesde,
+                fechaHasta,
+                vista.getEstadoFiltro()
+        );
     }
 
     public void nuevaCompra() {
@@ -314,9 +478,8 @@ public class CompraControlador {
                     JOptionPane.INFORMATION_MESSAGE
             );
 
-            cargarCombos();
             nuevaCompra();
-            buscarCompras();
+            recargarAsync();
             vista.mostrarPestanaHistorial();
 
         } catch (IllegalArgumentException
@@ -341,49 +504,88 @@ public class CompraControlador {
     }
 
     public void buscarCompras() {
+        final FiltrosHistorial filtros;
+
         try {
-            LocalDate fechaDesde =
-                    vista.getFechaDesdeFiltro();
+            filtros = capturarFiltrosHistorial();
+        } catch (IllegalArgumentException ex) {
+            mostrarAvisoFiltro(ex.getMessage());
+            return;
+        }
 
-            LocalDate fechaHasta =
-                    vista.getFechaHastaFiltro();
+        long versionActual =
+                ++versionBusqueda;
 
-            if (fechaDesde != null
-                    && fechaHasta != null
-                    && fechaDesde.isAfter(fechaHasta)) {
+        if (trabajadorBusqueda != null
+                && !trabajadorBusqueda.isDone()) {
 
-                throw new IllegalArgumentException(
-                        "La fecha inicial no puede ser "
-                        + "posterior a la final."
+            trabajadorBusqueda.cancel(true);
+        }
+
+        trabajadorBusqueda =
+                new SwingWorker<>() {
+
+            @Override
+            protected List<Compra> doInBackground()
+                    throws Exception {
+
+                return compraDAO.listarCompras(
+                        filtros.texto(),
+                        filtros.desde(),
+                        filtros.hasta(),
+                        filtros.estado()
                 );
             }
 
-            compras = compraDAO.listarCompras(
-                    vista.getTextoBusquedaHistorial(),
-                    fechaDesde,
-                    fechaHasta,
-                    vista.getEstadoFiltro()
-            );
+            @Override
+            protected void done() {
+                if (isCancelled()
+                        || versionActual
+                        != versionBusqueda) {
 
-            vista.mostrarCompras(compras);
-            vista.mostrarCantidadCompras(
-                    compras.size()
-            );
+                    return;
+                }
 
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(
-                    vista,
-                    ex.getMessage(),
-                    "Filtro de compras",
-                    JOptionPane.WARNING_MESSAGE
-            );
+                try {
+                    List<Compra> resultado = get();
 
-        } catch (SQLException ex) {
-            mostrarErrorBaseDatos(
-                    "No fue posible consultar las compras.",
-                    ex
-            );
-        }
+                    compras =
+                            new ArrayList<>(
+                                    resultado
+                            );
+
+                    vista.mostrarCompras(compras);
+
+                    vista.mostrarCantidadCompras(
+                            compras.size()
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (CancellationException ex) {
+                    // La búsqueda fue reemplazada.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    mostrarErrorBaseDatos(
+                            "No fue posible consultar "
+                            + "las compras.",
+                            causa
+                    );
+                }
+            }
+        };
+
+        trabajadorBusqueda.execute();
     }
 
     public void verDetalleCompra() {
@@ -480,8 +682,7 @@ public class CompraControlador {
                     JOptionPane.INFORMATION_MESSAGE
             );
 
-            cargarCombos();
-            buscarCompras();
+            recargarAsync();
 
         } catch (SQLException ex) {
             mostrarErrorBaseDatos(
@@ -625,19 +826,36 @@ public class CompraControlador {
         vista.mostrarDetalles(detalles);
     }
 
+    private void mostrarAvisoFiltro(
+            String mensaje) {
+
+        JOptionPane.showMessageDialog(
+                vista,
+                mensaje,
+                "Filtro de compras",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
     private void mostrarErrorBaseDatos(
             String mensaje,
-            SQLException ex) {
+            Throwable ex) {
 
         JOptionPane.showMessageDialog(
                 vista,
                 mensaje
                 + "\n\nDetalle: "
-                + ex.getMessage(),
+                + (
+                    ex == null
+                            ? "Error desconocido"
+                            : ex.getMessage()
+                ),
                 "Error de base de datos",
                 JOptionPane.ERROR_MESSAGE
         );
 
-        ex.printStackTrace();
+        if (ex != null) {
+            ex.printStackTrace();
+        }
     }
 }

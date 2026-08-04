@@ -32,6 +32,7 @@ public class ConfiguracionPanel
 
     private final ConfiguracionControlador controlador;
 
+    private boolean iniciado;
     private byte[] logoActual;
     private String logoNombreActual;
 
@@ -44,11 +45,20 @@ public class ConfiguracionPanel
                 new ConfiguracionControlador(this);
 
         configurarEventos();
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -564,18 +574,79 @@ public class ConfiguracionPanel
         txtRutaArchivoBak.setText(ruta);
     }
 
-    public void establecerProcesoRespaldo(
-            boolean procesando) {
+    public void establecerOperacion(
+            boolean procesando,
+            String accion) {
 
-        btnCrearRespaldo.setEnabled(!procesando);
-        btnVerificarRespaldo.setEnabled(!procesando);
-        btnRestaurarRespaldo.setEnabled(!procesando);
-        btnGuardar.setEnabled(!procesando);
+        boolean habilitado = !procesando;
+
+        btnGuardar.setEnabled(habilitado);
+        btnRestaurarDatos.setEnabled(habilitado);
+        btnProbarCorreo.setEnabled(habilitado);
+        btnProbarConexion.setEnabled(habilitado);
+        btnCrearRespaldo.setEnabled(habilitado);
+        btnVerificarRespaldo.setEnabled(habilitado);
+        btnRestaurarRespaldo.setEnabled(habilitado);
+
+        setCursor(
+                Cursor.getPredefinedCursor(
+                        procesando
+                                ? Cursor.WAIT_CURSOR
+                                : Cursor.DEFAULT_CURSOR
+                )
+        );
+
+        btnGuardar.setText(
+                procesando
+                && "GUARDAR".equals(accion)
+                        ? "Guardando..."
+                        : "Guardar configuración"
+        );
+
+        btnProbarCorreo.setText(
+                procesando
+                && "CORREO".equals(accion)
+                        ? "Probando..."
+                        : "Probar configuración"
+        );
+
+        btnProbarConexion.setText(
+                procesando
+                && "CONEXION".equals(accion)
+                        ? "Probando..."
+                        : "Probar conexión"
+        );
 
         btnCrearRespaldo.setText(
                 procesando
-                        ? "Procesando..."
+                && "CREAR_RESPALDO".equals(accion)
+                        ? "Creando..."
                         : "Crear respaldo"
+        );
+
+        btnVerificarRespaldo.setText(
+                procesando
+                && "VERIFICAR_RESPALDO".equals(accion)
+                        ? "Verificando..."
+                        : "Verificar respaldo"
+        );
+
+        btnRestaurarRespaldo.setText(
+                procesando
+                && "RESTAURAR_RESPALDO".equals(accion)
+                        ? "Restaurando..."
+                        : "Restaurar base SIGIR"
+        );
+    }
+
+    public void establecerProcesoRespaldo(
+            boolean procesando) {
+
+        establecerOperacion(
+                procesando,
+                procesando
+                        ? "CREAR_RESPALDO"
+                        : null
         );
     }
 
@@ -808,7 +879,7 @@ public class ConfiguracionPanel
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1209,9 +1280,9 @@ public class ConfiguracionPanel
 
         add(tabsConfiguracion);
         tabsConfiguracion.setBounds(28, 195, 1070, 565);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnCrearRespaldo;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnProbarConexion;
@@ -1302,5 +1373,5 @@ public class ConfiguracionPanel
     private javax.swing.JTextField txtSmtpUsuario;
     private javax.swing.JTextField txtTelefono;
     private javax.swing.JTextField txtUltimaActualizacion;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

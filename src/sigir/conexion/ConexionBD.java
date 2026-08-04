@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public final class ConexionBD {
 
     private static final String URL
-            = "jdbc:sqlserver://192.168.0.7:1433;"
+            = "jdbc:sqlserver://192.168.0.8:1433;"
             + "databaseName=SIGIR;"
             + "encrypt=true;"
             + "trustServerCertificate=true;";

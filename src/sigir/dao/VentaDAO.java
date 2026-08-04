@@ -129,8 +129,8 @@ public class VentaDAO {
             INNER JOIN dbo.clientes c ON c.id_cliente=v.id_cliente
             INNER JOIN dbo.usuarios u ON u.id_usuario=v.id_usuario
             WHERE (?='' OR v.numero_factura LIKE '%'+?+'%' OR c.nombre_completo LIKE '%'+?+'%' OR u.nombre_completo LIKE '%'+?+'%')
-              AND (? IS NULL OR CAST(v.fecha_venta AS DATE)>=?)
-              AND (? IS NULL OR CAST(v.fecha_venta AS DATE)<=?)
+              AND (? IS NULL OR v.fecha_venta >= ?)
+              AND (? IS NULL OR v.fecha_venta < DATEADD(DAY,1,?))
               AND (? IS NULL OR v.metodo_pago=?)
               AND (? IS NULL OR v.estado=?)
             ORDER BY v.fecha_venta DESC,v.id_venta DESC;

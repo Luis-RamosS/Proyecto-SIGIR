@@ -18,6 +18,7 @@ import sigir.util.FiltroTiempoReal;
 public class ProveedoresPanel extends javax.swing.JPanel {
 
     private final ProveedorControlador controlador;
+    private boolean iniciado;
 
     public ProveedoresPanel() {
         initComponents();
@@ -31,11 +32,20 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                 txtBuscar,
                 controlador::buscar
         );
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -238,7 +248,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
         );
 
         btnActualizar.addActionListener(
-                e -> controlador.recargar()
+                e -> controlador.recargarAsync()
         );
 
         
@@ -588,7 +598,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -791,9 +801,9 @@ public class ProveedoresPanel extends javax.swing.JPanel {
 
         add(pnlLista);
         pnlLista.setBounds(28, 390, 1110, 344);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnActualizar;
     private javax.swing.JButton btnCambiarEstado;
     private javax.swing.JButton btnGuardar;
@@ -826,5 +836,5 @@ public class ProveedoresPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtNombreProveedor;
     private javax.swing.JTextField txtRtn;
     private javax.swing.JTextField txtTelefono;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

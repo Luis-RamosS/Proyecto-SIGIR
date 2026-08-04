@@ -15,6 +15,9 @@ import sigir.dao.VentaDAO;
 import sigir.modelo.*;
 import sigir.util.Sesion;
 import sigir.vista.paneles.VentasPanel;
+import java.awt.Cursor;
+import java.util.concurrent.ExecutionException;
+import javax.swing.SwingWorker;
 
 public class VentaControlador {
     private final VentasPanel vista;
@@ -22,18 +25,199 @@ public class VentaControlador {
     private final List<DetalleVenta> detalles = new ArrayList<>();
     private List<Producto> productos = new ArrayList<>();
     private List<Venta> ventas = new ArrayList<>();
+    
+    private SwingWorker<DatosCarga, Void> trabajadorCarga;
+    private SwingWorker<List<Venta>, Void> trabajadorBusqueda;
 
-    public VentaControlador(VentasPanel vista) { this.vista = vista; }
+    private long ultimaCarga;
+    private long versionBusqueda;
 
-    public void iniciar(){ cargarDatos(); nuevaVenta(); buscarVentas(); }
-    public void recargar(){ cargarDatos(); buscarVentas(); }
+    private static final long VIGENCIA_DATOS_MS =
+            30_000;
 
-    private void cargarDatos(){
-        try{
-            vista.cargarClientes(dao.listarClientesActivos());
-            productos=dao.listarProductosDisponibles();
-            vista.cargarProductos(productos);
-        }catch(SQLException ex){ error("No fue posible cargar clientes o productos.",ex); }
+    private record DatosCarga(
+            List<Cliente> clientes,
+            List<Producto> productos,
+            List<Venta> ventas
+    ) {
+    }
+
+    private record FiltrosHistorial(
+            String texto,
+            LocalDate desde,
+            LocalDate hasta,
+            String metodo,
+            String estado
+    ) {
+    }
+
+    public VentaControlador(VentasPanel vista) {
+        this.vista = vista;
+    }
+
+    public void iniciarAsync() {
+        nuevaVenta();
+        cargarAsync();
+    }
+
+    public void recargarAsync() {
+        cargarAsync();
+    }
+
+    public void recargar() {
+        recargarAsync();
+    }
+
+    public void recargarSiNecesario() {
+        long tiempoTranscurrido =
+                System.currentTimeMillis()
+                - ultimaCarga;
+
+        if (tiempoTranscurrido
+                >= VIGENCIA_DATOS_MS) {
+
+            cargarAsync();
+        }
+    }
+
+    private void cargarAsync() {
+        if (trabajadorCarga != null
+                && !trabajadorCarga.isDone()) {
+
+            return;
+        }
+
+        final FiltrosHistorial filtros;
+
+        try {
+            filtros = capturarFiltrosHistorial();
+        } catch (IllegalArgumentException ex) {
+            aviso(ex.getMessage());
+            return;
+        }
+
+        vista.setCursor(
+                Cursor.getPredefinedCursor(
+                        Cursor.WAIT_CURSOR
+                )
+        );
+
+        trabajadorCarga =
+                new SwingWorker<>() {
+
+            @Override
+            protected DatosCarga doInBackground()
+                    throws Exception {
+
+                List<Cliente> clientesCargados =
+                        dao.listarClientesActivos();
+
+                List<Producto> productosCargados =
+                        dao.listarProductosDisponibles();
+
+                List<Venta> ventasCargadas =
+                        dao.listarVentas(
+                                filtros.texto(),
+                                filtros.desde(),
+                                filtros.hasta(),
+                                filtros.metodo(),
+                                filtros.estado()
+                        );
+
+                return new DatosCarga(
+                        clientesCargados,
+                        productosCargados,
+                        ventasCargadas
+                );
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    DatosCarga datos = get();
+
+                    productos =
+                            new ArrayList<>(
+                                    datos.productos()
+                            );
+
+                    ventas =
+                            new ArrayList<>(
+                                    datos.ventas()
+                            );
+
+                    vista.cargarClientes(
+                            datos.clientes()
+                    );
+
+                    vista.cargarProductos(
+                            productos
+                    );
+
+                    vista.mostrarVentas(
+                            ventas
+                    );
+
+                    vista.mostrarCantidadVentas(
+                            ventas.size()
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    error(
+                            "No fue posible cargar "
+                            + "el módulo de ventas.",
+                            causa
+                    );
+
+                } finally {
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+                }
+            }
+        };
+
+        trabajadorCarga.execute();
+    }
+
+    private FiltrosHistorial
+            capturarFiltrosHistorial() {
+
+        LocalDate desde =
+                vista.getFechaDesdeFiltro();
+
+        LocalDate hasta =
+                vista.getFechaHastaFiltro();
+
+        if (desde != null
+                && hasta != null
+                && desde.isAfter(hasta)) {
+
+            throw new IllegalArgumentException(
+                    "La fecha inicial no puede ser "
+                    + "posterior a la fecha final."
+            );
+        }
+
+        return new FiltrosHistorial(
+                vista.getTextoBusquedaHistorial(),
+                desde,
+                hasta,
+                vista.getMetodoPagoFiltro(),
+                vista.getEstadoFiltro()
+        );
     }
 
     public void nuevaVenta(){
@@ -111,20 +295,96 @@ public class VentaControlador {
             int id=dao.registrar(v); v.setIdVenta(id);
             JOptionPane.showMessageDialog(vista,"Venta registrada correctamente.\nFactura: "+v.getNumeroFactura(),"Venta completada",JOptionPane.INFORMATION_MESSAGE);
             if(JOptionPane.showConfirmDialog(vista,"¿Deseas ver o imprimir la factura?","Factura",JOptionPane.YES_NO_OPTION)==JOptionPane.YES_OPTION) vista.mostrarFactura(v,true);
-            nuevaVenta(); cargarDatos(); buscarVentas(); vista.mostrarPestanaHistorial();
+            nuevaVenta(); recargarAsync(); vista.mostrarPestanaHistorial();
         }catch(IllegalArgumentException|IllegalStateException ex){ aviso(ex.getMessage()); }
         catch(SQLException ex){ error("No fue posible registrar la venta.",ex); }
         finally{ vista.establecerProcesando(false); }
     }
 
-    public void buscarVentas(){
-        try{
-            LocalDate d=vista.getFechaDesdeFiltro(), h=vista.getFechaHastaFiltro();
-            if(d!=null&&h!=null&&d.isAfter(h)) throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final.");
-            ventas=dao.listarVentas(vista.getTextoBusquedaHistorial(),d,h,vista.getMetodoPagoFiltro(),vista.getEstadoFiltro());
-            vista.mostrarVentas(ventas); vista.mostrarCantidadVentas(ventas.size());
-        }catch(IllegalArgumentException ex){ aviso(ex.getMessage()); }
-        catch(SQLException ex){ error("No fue posible consultar las ventas.",ex); }
+    public void buscarVentas() {
+        final FiltrosHistorial filtros;
+
+        try {
+            filtros = capturarFiltrosHistorial();
+        } catch (IllegalArgumentException ex) {
+            aviso(ex.getMessage());
+            return;
+        }
+
+        long versionActual =
+                ++versionBusqueda;
+
+        if (trabajadorBusqueda != null
+                && !trabajadorBusqueda.isDone()) {
+
+            trabajadorBusqueda.cancel(true);
+        }
+
+        trabajadorBusqueda =
+                new SwingWorker<>() {
+
+            @Override
+            protected List<Venta> doInBackground()
+                    throws Exception {
+
+                return dao.listarVentas(
+                        filtros.texto(),
+                        filtros.desde(),
+                        filtros.hasta(),
+                        filtros.metodo(),
+                        filtros.estado()
+                );
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled()
+                        || versionActual
+                           != versionBusqueda) {
+
+                    return;
+                }
+
+                try {
+                    List<Venta> resultado = get();
+
+                    ventas =
+                            new ArrayList<>(
+                                    resultado
+                            );
+
+                    vista.mostrarVentas(ventas);
+
+                    vista.mostrarCantidadVentas(
+                            ventas.size()
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (java.util.concurrent.CancellationException ex) {
+                    // La búsqueda fue sustituida por otra más reciente.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    error(
+                            "No fue posible consultar "
+                            + "las ventas.",
+                            causa
+                    );
+                }
+            }
+        };
+
+        trabajadorBusqueda.execute();
     }
 
     public void verDetalleVenta(){ mostrarSeleccionada(false); }
@@ -142,7 +402,7 @@ public class VentaControlador {
         if(!Sesion.esDueno()){ aviso("Solo el usuario con rol DUEÑO puede anular ventas."); return; }
         int r=JOptionPane.showConfirmDialog(vista,"La venta "+v.getNumeroFactura()+" será anulada y los productos volverán al inventario.\n\n¿Deseas continuar?","Anular venta",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE);
         if(r!=JOptionPane.YES_OPTION) return;
-        try{ dao.anular(v.getIdVenta(),Sesion.getIdUsuario()); JOptionPane.showMessageDialog(vista,"Venta anulada e inventario restaurado.","Venta anulada",JOptionPane.INFORMATION_MESSAGE); cargarDatos(); buscarVentas(); }
+        try{ dao.anular(v.getIdVenta(),Sesion.getIdUsuario()); JOptionPane.showMessageDialog(vista,"Venta anulada e inventario restaurado.","Venta anulada",JOptionPane.INFORMATION_MESSAGE); recargarAsync(); }
         catch(SQLException ex){ error("No fue posible anular la venta.",ex); }
     }
 
@@ -190,5 +450,5 @@ public class VentaControlador {
     private String generarFactura(){ return "VTA-"+LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))+"-"+ThreadLocalRandom.current().nextInt(100,1000); }
     private String texto(String s){ return s==null?"":s; }
     private void aviso(String m){ JOptionPane.showMessageDialog(vista,m,"SIGIR",JOptionPane.WARNING_MESSAGE); }
-    private void error(String m,SQLException ex){ JOptionPane.showMessageDialog(vista,m+"\n\nDetalle: "+ex.getMessage(),"Error de base de datos",JOptionPane.ERROR_MESSAGE); ex.printStackTrace(); }
+    private void error(String m,Throwable ex){ JOptionPane.showMessageDialog(vista,m+"\n\nDetalle: "+(ex==null?"Error desconocido":ex.getMessage()),"Error de base de datos",JOptionPane.ERROR_MESSAGE); if(ex!=null)ex.printStackTrace(); }
 }

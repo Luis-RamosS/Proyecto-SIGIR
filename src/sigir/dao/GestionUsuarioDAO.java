@@ -458,6 +458,48 @@ public class GestionUsuarioDAO {
         );
     }
 
+    public int[] contarIndicadores()
+            throws SQLException {
+
+        String sql = """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(
+                        CASE
+                            WHEN estado = 'ACTIVO'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS activos,
+                    SUM(
+                        CASE
+                            WHEN estado = 'BLOQUEADO'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS bloqueados
+                FROM dbo.usuarios;
+                """;
+
+        try (Connection conexion =
+                     ConexionBD.obtenerConexion();
+             PreparedStatement sentencia =
+                     conexion.prepareStatement(sql);
+             ResultSet resultado =
+                     sentencia.executeQuery()) {
+
+            if (!resultado.next()) {
+                return new int[]{0, 0, 0};
+            }
+
+            return new int[]{
+                resultado.getInt("total"),
+                resultado.getInt("activos"),
+                resultado.getInt("bloqueados")
+            };
+        }
+    }
+
     public int contarEstado(String estado)
             throws SQLException {
 

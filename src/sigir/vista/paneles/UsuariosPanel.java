@@ -31,6 +31,8 @@ public class UsuariosPanel
                     );
 
     private final UsuarioControlador controlador;
+    private boolean iniciado;
+    private boolean actualizandoControles;
 
     public UsuariosPanel() {
         initComponents();
@@ -47,11 +49,20 @@ public class UsuariosPanel
                 controlador::buscarUsuarios
         );
 
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -210,19 +221,23 @@ public class UsuariosPanel
 
     private void configurarEventos() {
         cmbRolFiltro.addActionListener(e -> {
-            if (cmbRolFiltro.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbRolFiltro.getItemCount() > 0) {
+
                 controlador.buscarUsuarios();
             }
         });
 
         cmbEstadoFiltro.addActionListener(e -> {
-            if (cmbEstadoFiltro.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbEstadoFiltro.getItemCount() > 0) {
+
                 controlador.buscarUsuarios();
             }
         });
 
         btnActualizar.addActionListener(
-                e -> controlador.recargar()
+                e -> controlador.recargarAsync()
         );
 
         btnNuevoUsuario.addActionListener(
@@ -268,9 +283,12 @@ public class UsuariosPanel
                         ? 0
                         : getIdRolFiltro();
 
-        DefaultComboBoxModel<RolSistema>
-                modeloFormulario =
-                        new DefaultComboBoxModel<>();
+        actualizandoControles = true;
+
+        try {
+            DefaultComboBoxModel<RolSistema>
+                    modeloFormulario =
+                            new DefaultComboBoxModel<>();
 
         for (RolSistema rol : roles) {
             modeloFormulario.addElement(rol);
@@ -301,10 +319,14 @@ public class UsuariosPanel
                 rolFormulario
         );
 
-        seleccionarRol(
-                cmbRolFiltro,
-                rolFiltro
-        );
+            seleccionarRol(
+                    cmbRolFiltro,
+                    rolFiltro
+            );
+
+        } finally {
+            actualizandoControles = false;
+        }
     }
 
     public String getTextoBusqueda() {
@@ -820,7 +842,7 @@ public class UsuariosPanel
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1079,9 +1101,9 @@ public class UsuariosPanel
 
         add(pnlFormularioUsuario);
         pnlFormularioUsuario.setBounds(722, 200, 376, 550);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnActualizar;
     private javax.swing.JButton btnGuardarUsuario;
     private javax.swing.JButton btnNuevoUsuario;
@@ -1129,5 +1151,5 @@ public class UsuariosPanel
     private javax.swing.JTextField txtNombreCompleto;
     private javax.swing.JTextField txtNombreUsuario;
     private javax.swing.JTextField txtTelefono;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

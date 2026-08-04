@@ -256,6 +256,34 @@ public class ReparacionDAO {
         return lista;
     }
 
+    public int[] contarIndicadores() throws SQLException {
+        String sql = """
+                SELECT
+                    SUM(CASE WHEN estado='RECIBIDO' THEN 1 ELSE 0 END)
+                        AS recibidos,
+                    SUM(CASE WHEN estado='EN_REPARACION' THEN 1 ELSE 0 END)
+                        AS en_reparacion,
+                    SUM(CASE WHEN estado='LISTO' THEN 1 ELSE 0 END)
+                        AS listos
+                FROM dbo.ordenes_servicio;
+                """;
+
+        try(Connection cn=ConexionBD.obtenerConexion();
+            PreparedStatement ps=cn.prepareStatement(sql);
+            ResultSet rs=ps.executeQuery()){
+
+            if(!rs.next()){
+                return new int[]{0,0,0};
+            }
+
+            return new int[]{
+                rs.getInt("recibidos"),
+                rs.getInt("en_reparacion"),
+                rs.getInt("listos")
+            };
+        }
+    }
+
     public int contarEstado(String estado) throws SQLException {
         try(Connection cn=ConexionBD.obtenerConexion();PreparedStatement ps=cn.prepareStatement("SELECT COUNT(*) FROM dbo.ordenes_servicio WHERE estado=?")){
             ps.setString(1,estado);try(ResultSet rs=ps.executeQuery()){return rs.next()?rs.getInt(1):0;}

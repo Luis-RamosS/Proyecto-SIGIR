@@ -30,6 +30,7 @@ public class ProductosPanel extends javax.swing.JPanel {
             NumberFormat.getCurrencyInstance(
                     new Locale("es", "HN")
             );
+    private boolean iniciado;
 
     public ProductosPanel() {
         initComponents();
@@ -42,11 +43,23 @@ public class ProductosPanel extends javax.swing.JPanel {
         configurarEventos();
         configurarBusquedaTiempoReal();
         
-        controlador.iniciar();
+        
+    }
+
+
+    public void activar() {
+
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarBusquedaTiempoReal() {

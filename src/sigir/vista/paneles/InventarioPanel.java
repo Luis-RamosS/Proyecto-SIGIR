@@ -35,6 +35,8 @@ public class InventarioPanel extends javax.swing.JPanel {
             );
 
     private final InventarioControlador controlador;
+    private boolean iniciado;
+    private boolean actualizandoControles;
 
     public InventarioPanel() {
         initComponents();
@@ -54,11 +56,20 @@ public class InventarioPanel extends javax.swing.JPanel {
             txtBuscarMovimientos,
             controlador::buscarMovimientos
 );
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -278,19 +289,23 @@ public class InventarioPanel extends javax.swing.JPanel {
         
 
         btnActualizarExistencias.addActionListener(
-                e -> controlador.actualizarTodo()
+                e -> controlador.recargarAsync()
         );
 
         
 
         cmbCategoria.addActionListener(e -> {
-            if (cmbCategoria.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbCategoria.getItemCount() > 0) {
+
                 controlador.buscarExistencias();
             }
         });
 
         cmbNivelStock.addActionListener(e -> {
-            if (cmbNivelStock.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbNivelStock.getItemCount() > 0) {
+
                 controlador.buscarExistencias();
             }
         });
@@ -298,13 +313,15 @@ public class InventarioPanel extends javax.swing.JPanel {
         
 
         btnActualizarMovimientos.addActionListener(
-                e -> controlador.actualizarTodo()
+                e -> controlador.recargarAsync()
         );
 
         
 
         cmbTipoMovimiento.addActionListener(e -> {
-            if (cmbTipoMovimiento.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbTipoMovimiento.getItemCount() > 0) {
+
                 controlador.buscarMovimientos();
             }
         });
@@ -351,8 +368,11 @@ public class InventarioPanel extends javax.swing.JPanel {
 
         Categoria seleccionada = getCategoriaFiltro();
 
-        DefaultComboBoxModel<Categoria> modelo =
-                new DefaultComboBoxModel<>();
+        actualizandoControles = true;
+
+        try {
+            DefaultComboBoxModel<Categoria> modelo =
+                    new DefaultComboBoxModel<>();
 
         modelo.addElement(
                 new Categoria(
@@ -367,10 +387,14 @@ public class InventarioPanel extends javax.swing.JPanel {
 
         cmbCategoria.setModel(modelo);
 
-        if (seleccionada != null) {
-            seleccionarCategoria(
-                    seleccionada.getIdCategoria()
-            );
+            if (seleccionada != null) {
+                seleccionarCategoria(
+                        seleccionada.getIdCategoria()
+                );
+            }
+
+        } finally {
+            actualizandoControles = false;
         }
     }
 
@@ -677,8 +701,11 @@ public class InventarioPanel extends javax.swing.JPanel {
         Producto seleccionado =
                 getProductoAjusteSeleccionado();
 
-        DefaultComboBoxModel<Producto> modelo =
-                new DefaultComboBoxModel<>();
+        actualizandoControles = true;
+
+        try {
+            DefaultComboBoxModel<Producto> modelo =
+                    new DefaultComboBoxModel<>();
 
         Producto opcion = new Producto();
         opcion.setIdProducto(0);
@@ -695,10 +722,14 @@ public class InventarioPanel extends javax.swing.JPanel {
 
         cmbProductoAjuste.setModel(modelo);
 
-        if (seleccionado != null) {
-            seleccionarProductoAjuste(
-                    seleccionado.getIdProducto()
-            );
+            if (seleccionado != null) {
+                seleccionarProductoAjuste(
+                        seleccionado.getIdProducto()
+                );
+            }
+
+        } finally {
+            actualizandoControles = false;
         }
     }
 
@@ -877,7 +908,7 @@ public class InventarioPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1299,9 +1330,9 @@ public class InventarioPanel extends javax.swing.JPanel {
 
         add(tabsInventario);
         tabsInventario.setBounds(28, 198, 1100, 650);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnActualizarExistencias;
     private javax.swing.JButton btnActualizarMovimientos;
     private javax.swing.JButton btnLimpiarAjuste;
@@ -1369,5 +1400,5 @@ public class InventarioPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtFechaHasta;
     private javax.swing.JTextArea txtMotivoAjuste;
     private javax.swing.JTextField txtStockActualAjuste;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

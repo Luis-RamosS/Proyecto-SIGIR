@@ -10,6 +10,9 @@ import sigir.dao.ProductoDAO;
 import sigir.modelo.Categoria;
 import sigir.modelo.Producto;
 import sigir.vista.paneles.ProductosPanel;
+import java.awt.Cursor;
+import java.util.concurrent.ExecutionException;
+import javax.swing.SwingWorker;
 
 public class ProductoControlador {
 
@@ -20,23 +23,156 @@ public class ProductoControlador {
     private List<Producto> productos = new ArrayList<>();
     private Integer idProductoSeleccionado;
 
+    private SwingWorker<DatosCarga, Void> trabajador;
+
+    private long ultimaCarga;
+
+    private static final long VIGENCIA_DATOS_MS
+            = 30_000;
+
+    private record DatosCarga(
+            List<Categoria> categorias,
+            List<Producto> productos
+            ) {
+
+    }
+
     public ProductoControlador(ProductosPanel vista) {
         this.vista = vista;
         this.productoDAO = new ProductoDAO();
         this.categoriaDAO = new CategoriaDAO();
     }
 
-    public void iniciar() {
-        cargarCategorias();
-        buscar();
-        nuevo();
+    public void iniciarAsync() {
+        cargarAsync(true);
     }
 
-    public void recargar() {
-        cargarCategorias();
-        buscar();
+    public void recargarAsync() {
+        cargarAsync(true);
     }
 
+    public void recargarSiNecesario() {
+
+        long tiempoTranscurrido
+                = System.currentTimeMillis()
+                - ultimaCarga;
+
+        if (tiempoTranscurrido
+                >= VIGENCIA_DATOS_MS) {
+
+            cargarAsync(false);
+        }
+    }
+
+    
+    private void cargarAsync(
+            boolean cargarCategorias) {
+
+        if (trabajador != null
+                && !trabajador.isDone()) {
+
+            return;
+        }
+
+        Categoria categoria
+                = vista.getCategoriaFiltro();
+
+        Integer idCategoria
+                = categoria == null
+                || categoria.getIdCategoria() <= 0
+                ? null
+                : categoria.getIdCategoria();
+
+        String textoBusqueda
+                = vista.getTextoBusqueda();
+
+        vista.setCursor(
+                Cursor.getPredefinedCursor(
+                        Cursor.WAIT_CURSOR
+                )
+        );
+
+        trabajador
+                = new SwingWorker<>() {
+
+            @Override
+            protected DatosCarga doInBackground()
+                    throws Exception {
+
+                List<Categoria> categorias
+                        = cargarCategorias
+                                ? categoriaDAO
+                                        .listarActivas()
+                                : List.of();
+
+                List<Producto> productosCargados
+                        = productoDAO.listar(
+                                textoBusqueda,
+                                idCategoria
+                        );
+
+                return new DatosCarga(
+                        categorias,
+                        productosCargados
+                );
+            }
+
+            @Override
+            protected void done() {
+
+                try {
+                    DatosCarga datos = get();
+
+                    if (cargarCategorias) {
+                        vista.cargarCategorias(
+                                datos.categorias()
+                        );
+                    }
+
+                    productos
+                            = datos.productos();
+
+                    vista.mostrarProductos(productos);
+
+                    vista.mostrarCantidad(
+                            productos.size()
+                    );
+
+                    ultimaCarga
+                            = System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (ExecutionException ex) {
+
+                    Throwable causa
+                            = ex.getCause();
+
+                    JOptionPane.showMessageDialog(
+                            vista,
+                            "No fue posible cargar "
+                            + "los productos.\n\n"
+                            + (causa == null
+                                    ? ex.getMessage()
+                                    : causa.getMessage()),
+                            "Error de base de datos",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+
+                } finally {
+
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+                }
+            }
+        };
+
+        trabajador.execute();
+    }
     public void buscar() {
         try {
             Categoria categoria = vista.getCategoriaFiltro();

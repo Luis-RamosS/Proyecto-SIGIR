@@ -46,6 +46,9 @@ public class ReportesPanel extends javax.swing.JPanel {
     private TableRowSorter<DefaultTableModel>
             ordenadorResultados;
 
+    private boolean iniciado;
+    private boolean actualizandoControles;
+
     public ReportesPanel() {
         initComponents();
         configurarComponentes();
@@ -61,11 +64,20 @@ public class ReportesPanel extends javax.swing.JPanel {
                 this::filtrarResultadosLocales
         );
 
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -278,13 +290,15 @@ public class ReportesPanel extends javax.swing.JPanel {
 
     private void configurarEventos() {
         cmbTipoReporte.addActionListener(e -> {
-            if (cmbTipoReporte.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbTipoReporte.getItemCount() > 0) {
+
                 controlador.cambiarTipoReporte();
             }
         });
 
         btnConsultar.addActionListener(
-                e -> controlador.consultar()
+                e -> controlador.consultarAsync()
         );
 
         btnExportar.addActionListener(
@@ -299,13 +313,29 @@ public class ReportesPanel extends javax.swing.JPanel {
     public void cargarTiposReporte(
             List<TipoReporte> tipos) {
 
-        cmbTipoReporte.setModel(
-                new DefaultComboBoxModel<>(
-                        tipos.toArray(
-                                TipoReporte[]::new
-                        )
-                )
-        );
+        TipoReporte seleccionado =
+                getTipoReporteSeleccionado();
+
+        actualizandoControles = true;
+
+        try {
+            cmbTipoReporte.setModel(
+                    new DefaultComboBoxModel<>(
+                            tipos.toArray(
+                                    TipoReporte[]::new
+                            )
+                    )
+            );
+
+            if (seleccionado != null) {
+                cmbTipoReporte.setSelectedItem(
+                        seleccionado
+                );
+            }
+
+        } finally {
+            actualizandoControles = false;
+        }
     }
 
     public void cargarUsuarios(
@@ -314,8 +344,11 @@ public class ReportesPanel extends javax.swing.JPanel {
         Integer anterior =
                 getIdUsuarioSeleccionado();
 
-        DefaultComboBoxModel<UsuarioFiltro> modelo =
-                new DefaultComboBoxModel<>();
+        actualizandoControles = true;
+
+        try {
+            DefaultComboBoxModel<UsuarioFiltro> modelo =
+                    new DefaultComboBoxModel<>();
 
         UsuarioFiltro todos = new UsuarioFiltro();
         todos.setIdUsuario(0);
@@ -334,13 +367,20 @@ public class ReportesPanel extends javax.swing.JPanel {
             return;
         }
 
-        for (int i = 0; i < modelo.getSize(); i++) {
-            if (modelo.getElementAt(i)
-                    .getIdUsuario() == anterior) {
+            for (int i = 0;
+                    i < modelo.getSize();
+                    i++) {
 
-                cmbUsuario.setSelectedIndex(i);
-                break;
+                if (modelo.getElementAt(i)
+                        .getIdUsuario() == anterior) {
+
+                    cmbUsuario.setSelectedIndex(i);
+                    break;
+                }
             }
+
+        } finally {
+            actualizandoControles = false;
         }
     }
 
@@ -660,7 +700,7 @@ public class ReportesPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -828,7 +868,7 @@ public class ReportesPanel extends javax.swing.JPanel {
 
         add(tabsResultados);
         tabsResultados.setBounds(28, 334, 1070, 438);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
     private void crearTarjeta(
             javax.swing.JPanel panel,
@@ -874,7 +914,7 @@ public class ReportesPanel extends javax.swing.JPanel {
         etiqueta.setBounds(x, y, ancho, 18);
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnConsultar;
     private javax.swing.JButton btnExportar;
     private javax.swing.JButton btnImprimir;
@@ -919,5 +959,5 @@ public class ReportesPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtDescripcionReporte;
     private javax.swing.JTextField txtFechaDesde;
     private javax.swing.JTextField txtFechaHasta;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

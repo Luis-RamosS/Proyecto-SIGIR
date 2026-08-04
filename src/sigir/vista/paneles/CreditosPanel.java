@@ -30,6 +30,8 @@ public class CreditosPanel extends javax.swing.JPanel {
             NumberFormat.getCurrencyInstance(new Locale("es", "HN"));
 
     private final CreditoControlador controlador;
+    private boolean iniciado;
+    private boolean actualizandoControles;
 
     public CreditosPanel() {
         initComponents();
@@ -50,11 +52,20 @@ public class CreditosPanel extends javax.swing.JPanel {
                 controlador::buscarAbonos
         );
 
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -172,14 +183,18 @@ public class CreditosPanel extends javax.swing.JPanel {
 
     private void configurarEventos() {
         cmbEstadoCredito.addActionListener(e -> {
-            if (cmbEstadoCredito.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbEstadoCredito.getItemCount() > 0) {
+
                 controlador.buscarCreditos();
             }
         });
 
-        cmbCreditoAbono.addActionListener(
-                e -> controlador.seleccionarCredito()
-        );
+        cmbCreditoAbono.addActionListener(e -> {
+            if (!actualizandoControles) {
+                controlador.seleccionarCredito();
+            }
+        });
 
         btnRegistrarAbono.addActionListener(
                 e -> controlador.registrarAbono()
@@ -258,16 +273,51 @@ public class CreditosPanel extends javax.swing.JPanel {
     public void cargarCreditosParaAbono(
             List<Credito> creditos) {
 
-        DefaultComboBoxModel<Credito> modelo =
-                new DefaultComboBoxModel<>();
+        Credito seleccionado =
+                getCreditoSeleccionadoParaAbono();
 
-        modelo.addElement(null);
+        int idSeleccionado =
+                seleccionado == null
+                        ? 0
+                        : seleccionado.getIdCredito();
 
-        for (Credito credito : creditos) {
-            modelo.addElement(credito);
+        actualizandoControles = true;
+
+        try {
+            DefaultComboBoxModel<Credito> modelo =
+                    new DefaultComboBoxModel<>();
+
+            modelo.addElement(null);
+
+            for (Credito credito : creditos) {
+                modelo.addElement(credito);
+            }
+
+            cmbCreditoAbono.setModel(modelo);
+
+            if (idSeleccionado > 0) {
+                for (int i = 0;
+                        i < cmbCreditoAbono.getItemCount();
+                        i++) {
+
+                    Credito credito =
+                            cmbCreditoAbono.getItemAt(i);
+
+                    if (credito != null
+                            && credito.getIdCredito()
+                            == idSeleccionado) {
+
+                        cmbCreditoAbono.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+
+        } finally {
+            actualizandoControles = false;
         }
 
-        cmbCreditoAbono.setModel(modelo);
+        controlador.seleccionarCredito();
     }
 
     public Credito getCreditoSeleccionadoParaAbono() {
@@ -484,7 +534,7 @@ public class CreditosPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -716,9 +766,9 @@ public class CreditosPanel extends javax.swing.JPanel {
 
         add(tabsCreditos);
         tabsCreditos.setBounds(28, 205, 1070, 565);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnEstadoCuenta;
     private javax.swing.JButton btnRegistrarAbono;
     private javax.swing.JComboBox<Credito> cmbCreditoAbono;
@@ -767,5 +817,5 @@ public class CreditosPanel extends javax.swing.JPanel {
     private javax.swing.JTextArea txtObservacionesAbono;
     private javax.swing.JTextField txtReferencia;
     private javax.swing.JTextField txtSaldoAbono;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

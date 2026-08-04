@@ -56,8 +56,14 @@ public class InventarioDAO {
 
                 SELECT COUNT(*) AS movimientos_hoy
                 FROM dbo.movimientos_inventario
-                WHERE CAST(fecha_movimiento AS DATE)
-                    = CAST(SYSDATETIME() AS DATE);
+                WHERE fecha_movimiento
+                        >= CONVERT(date, SYSDATETIME())
+                  AND fecha_movimiento
+                        < DATEADD(
+                            DAY,
+                            1,
+                            CONVERT(date, SYSDATETIME())
+                        );
                 """;
 
         ResumenInventario resumen = new ResumenInventario();
@@ -333,8 +339,12 @@ public class InventarioDAO {
                         OR ISNULL(mi.motivo, '') LIKE '%' + ? + '%'
                     )
                     AND (? IS NULL OR mi.tipo_movimiento = ?)
-                    AND (? IS NULL OR CAST(mi.fecha_movimiento AS DATE) >= ?)
-                    AND (? IS NULL OR CAST(mi.fecha_movimiento AS DATE) <= ?)
+                    AND (? IS NULL OR mi.fecha_movimiento >= ?)
+                    AND (
+                        ? IS NULL
+                        OR mi.fecha_movimiento
+                            < DATEADD(DAY, 1, ?)
+                    )
                 ORDER BY
                     mi.fecha_movimiento DESC,
                     mi.id_movimiento DESC;

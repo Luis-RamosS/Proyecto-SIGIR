@@ -224,8 +224,8 @@ public class CompraDAO {
                         OR p.nombre_proveedor LIKE '%' + ? + '%'
                         OR u.nombre_completo LIKE '%' + ? + '%'
                     )
-                    AND (? IS NULL OR CAST(c.fecha_compra AS DATE) >= ?)
-                    AND (? IS NULL OR CAST(c.fecha_compra AS DATE) <= ?)
+                    AND (? IS NULL OR c.fecha_compra >= ?)
+                    AND (? IS NULL OR c.fecha_compra < DATEADD(DAY, 1, ?))
                     AND (? IS NULL OR c.estado = ?)
                 ORDER BY c.fecha_compra DESC, c.id_compra DESC;
                 """;

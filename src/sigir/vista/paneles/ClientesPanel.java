@@ -19,6 +19,8 @@ import sigir.util.FiltroTiempoReal;
 public class ClientesPanel extends javax.swing.JPanel {
 
     private final ClienteControlador controlador;
+    private boolean iniciado;
+    private boolean actualizandoControles;
 
     public ClientesPanel() {
         initComponents();
@@ -35,11 +37,20 @@ public class ClientesPanel extends javax.swing.JPanel {
             controlador::buscar
         );
         
-        controlador.iniciar();
+    }
+
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -218,18 +229,22 @@ public class ClientesPanel extends javax.swing.JPanel {
                 e -> controlador.cambiarEstado()
         );
         btnActualizar.addActionListener(
-                e -> controlador.recargar()
+                e -> controlador.recargarAsync()
         );
         
 
         cmbFiltroTipo.addActionListener(e -> {
-            if (cmbFiltroTipo.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbFiltroTipo.getItemCount() > 0) {
+
                 controlador.buscar();
             }
         });
 
         cmbFiltroEstado.addActionListener(e -> {
-            if (cmbFiltroEstado.getItemCount() > 0) {
+            if (!actualizandoControles
+                    && cmbFiltroEstado.getItemCount() > 0) {
+
                 controlador.buscar();
             }
         });
@@ -271,8 +286,11 @@ public class ClientesPanel extends javax.swing.JPanel {
         TipoCliente seleccionFormulario =
                 getTipoFormulario();
 
-        DefaultComboBoxModel<TipoCliente> modeloFiltro =
-                new DefaultComboBoxModel<>();
+        actualizandoControles = true;
+
+        try {
+            DefaultComboBoxModel<TipoCliente> modeloFiltro =
+                    new DefaultComboBoxModel<>();
 
         modeloFiltro.addElement(
                 new TipoCliente(0, "Todos los tipos")
@@ -300,12 +318,16 @@ public class ClientesPanel extends javax.swing.JPanel {
                         : seleccionFiltro.getIdTipoCliente()
         );
 
-        seleccionarTipo(
-                cmbTipoCliente,
-                seleccionFormulario == null
-                        ? 0
-                        : seleccionFormulario.getIdTipoCliente()
-        );
+            seleccionarTipo(
+                    cmbTipoCliente,
+                    seleccionFormulario == null
+                            ? 0
+                            : seleccionFormulario.getIdTipoCliente()
+            );
+
+        } finally {
+            actualizandoControles = false;
+        }
     }
 
     public void mostrarClientes(List<Cliente> clientes) {
@@ -645,7 +667,7 @@ public class ClientesPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -851,9 +873,9 @@ public class ClientesPanel extends javax.swing.JPanel {
 
         add(pnlLista);
         pnlLista.setBounds(28, 390, 1094, 344);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnActualizar;
     private javax.swing.JButton btnCambiarEstado;
     private javax.swing.JButton btnGuardar;
@@ -887,5 +909,5 @@ public class ClientesPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtIdentidad;
     private javax.swing.JTextField txtNombre;
     private javax.swing.JTextField txtTelefono;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

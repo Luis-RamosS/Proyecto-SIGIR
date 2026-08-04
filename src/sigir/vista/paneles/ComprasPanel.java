@@ -53,6 +53,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     private Producto productoSeleccionado;
     private Proveedor proveedorSeleccionado;
     private BuscadorSugerencias<Proveedor> buscadorProveedores;
+    private boolean iniciado;
 
     public ComprasPanel() {
         initComponents();
@@ -68,12 +69,20 @@ public class ComprasPanel extends javax.swing.JPanel {
                 txtBuscarHistorial,
                 controlador::buscarCompras
         );
+    }
 
-        controlador.iniciar();
+    public void activar() {
+        if (!iniciado) {
+            iniciado = true;
+            controlador.iniciarAsync();
+            return;
+        }
+
+        controlador.recargarSiNecesario();
     }
 
     public void recargar() {
-        controlador.recargar();
+        controlador.recargarAsync();
     }
 
     private void configurarComponentes() {
@@ -377,7 +386,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         );
 
         btnActualizarHistorial.addActionListener(
-                e -> controlador.recargar()
+                e -> controlador.recargarAsync()
         );
 
         btnVerDetalle.addActionListener(
@@ -1125,7 +1134,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1503,9 +1512,9 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         add(tabsCompras);
         tabsCompras.setBounds(28, 88, 1070, 680);
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton btnActualizarHistorial;
     private javax.swing.JButton btnAgregarProducto;
     private javax.swing.JButton btnAnularCompra;
@@ -1568,5 +1577,5 @@ public class ComprasPanel extends javax.swing.JPanel {
     private javax.swing.JTextArea txtObservaciones;
     private javax.swing.JTextField txtStockProducto;
     private javax.swing.JTextField txtUsuario;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }

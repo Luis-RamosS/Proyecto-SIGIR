@@ -1,9 +1,13 @@
 package sigir.controlador;
 
+import java.awt.Cursor;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 import sigir.dao.ProveedorDAO;
 import sigir.modelo.Proveedor;
 import sigir.vista.paneles.ProveedoresPanel;
@@ -13,60 +17,294 @@ public class ProveedorControlador {
     private final ProveedoresPanel vista;
     private final ProveedorDAO proveedorDAO;
 
-    private List<Proveedor> proveedores = new ArrayList<>();
+    private List<Proveedor> proveedores =
+            new ArrayList<>();
+
     private Integer idProveedorSeleccionado;
     private String estadoProveedorSeleccionado;
+    private Integer idPendienteSeleccionar;
 
-    public ProveedorControlador(ProveedoresPanel vista) {
+    private SwingWorker<List<Proveedor>, Void>
+            trabajadorCarga;
+
+    private long ultimaCarga;
+    private long versionBusqueda;
+    private boolean recargaPendiente;
+
+    private static final long VIGENCIA_DATOS_MS =
+            30_000;
+
+    private record FiltroProveedores(
+            String texto,
+            String estado
+    ) {
+    }
+
+    public ProveedorControlador(
+            ProveedoresPanel vista) {
+
         this.vista = vista;
-        this.proveedorDAO = new ProveedorDAO();
+        this.proveedorDAO =
+                new ProveedorDAO();
+    }
+
+    public void iniciarAsync() {
+        nuevo();
+        cargarAsync();
+    }
+
+    public void recargarAsync() {
+        cargarAsync();
     }
 
     public void iniciar() {
-        buscar();
-        nuevo();
+        iniciarAsync();
     }
 
     public void recargar() {
-        buscar();
+        recargarAsync();
+    }
+
+    public void recargarSiNecesario() {
+        long tiempoTranscurrido =
+                System.currentTimeMillis()
+                - ultimaCarga;
+
+        if (tiempoTranscurrido
+                >= VIGENCIA_DATOS_MS) {
+
+            cargarAsync();
+        }
+    }
+
+    private void cargarAsync() {
+        if (trabajadorCarga != null
+                && !trabajadorCarga.isDone()) {
+
+            recargaPendiente = true;
+            return;
+        }
+
+        final FiltroProveedores filtro =
+                capturarFiltro();
+
+        final long versionActual =
+                ++versionBusqueda;
+
+        recargaPendiente = false;
+
+        vista.setCursor(
+                Cursor.getPredefinedCursor(
+                        Cursor.WAIT_CURSOR
+                )
+        );
+
+        trabajadorCarga =
+                new SwingWorker<>() {
+
+            @Override
+            protected List<Proveedor>
+                    doInBackground()
+                    throws Exception {
+
+                return proveedorDAO.listar(
+                        filtro.texto(),
+                        filtro.estado()
+                );
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    if (versionActual
+                            == versionBusqueda) {
+
+                        aplicarProveedores(
+                                get()
+                        );
+
+                        ultimaCarga =
+                                System.currentTimeMillis();
+                    }
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (CancellationException ex) {
+                    // La búsqueda fue reemplazada.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    mostrarErrorBaseDatos(
+                            "No fue posible cargar "
+                            + "los proveedores.",
+                            causa
+                    );
+
+                } finally {
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+
+                    if (recargaPendiente) {
+                        cargarAsync();
+                    }
+                }
+            }
+        };
+
+        trabajadorCarga.execute();
     }
 
     public void buscar() {
-        try {
-            proveedores = proveedorDAO.listar(
-                    vista.getTextoBusqueda(),
-                    vista.getEstadoFiltro()
-            );
+        final FiltroProveedores filtro =
+                capturarFiltro();
 
-            vista.mostrarProveedores(proveedores);
-            vista.mostrarCantidad(proveedores.size());
+        final long versionActual =
+                ++versionBusqueda;
 
-        } catch (SQLException ex) {
-            mostrarErrorBaseDatos(
-                    "No fue posible cargar los proveedores.",
-                    ex
-            );
+        if (trabajadorCarga != null
+                && !trabajadorCarga.isDone()) {
+
+            trabajadorCarga.cancel(true);
         }
+
+        vista.setCursor(
+                Cursor.getPredefinedCursor(
+                        Cursor.WAIT_CURSOR
+                )
+        );
+
+        trabajadorCarga =
+                new SwingWorker<>() {
+
+            @Override
+            protected List<Proveedor>
+                    doInBackground()
+                    throws Exception {
+
+                return proveedorDAO.listar(
+                        filtro.texto(),
+                        filtro.estado()
+                );
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled()
+                        || versionActual
+                        != versionBusqueda) {
+
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+                    return;
+                }
+
+                try {
+                    aplicarProveedores(
+                            get()
+                    );
+
+                    ultimaCarga =
+                            System.currentTimeMillis();
+
+                } catch (InterruptedException ex) {
+                    Thread.currentThread()
+                            .interrupt();
+
+                } catch (CancellationException ex) {
+                    // La búsqueda fue reemplazada.
+
+                } catch (ExecutionException ex) {
+                    Throwable causa =
+                            ex.getCause() == null
+                                    ? ex
+                                    : ex.getCause();
+
+                    mostrarErrorBaseDatos(
+                            "No fue posible cargar "
+                            + "los proveedores.",
+                            causa
+                    );
+
+                } finally {
+                    vista.setCursor(
+                            Cursor.getDefaultCursor()
+                    );
+                }
+            }
+        };
+
+        trabajadorCarga.execute();
+    }
+
+    private void aplicarProveedores(
+            List<Proveedor> resultado) {
+
+        proveedores =
+                new ArrayList<>(
+                        resultado
+                );
+
+        vista.mostrarProveedores(
+                proveedores
+        );
+
+        vista.mostrarCantidad(
+                proveedores.size()
+        );
+
+        if (idPendienteSeleccionar != null) {
+            Integer id =
+                    idPendienteSeleccionar;
+
+            idPendienteSeleccionar = null;
+
+            seleccionarProveedorEnTabla(id);
+        }
+    }
+
+    private FiltroProveedores
+            capturarFiltro() {
+
+        return new FiltroProveedores(
+                vista.getTextoBusqueda(),
+                vista.getEstadoFiltro()
+        );
     }
 
     public void nuevo() {
         idProveedorSeleccionado = null;
         estadoProveedorSeleccionado = null;
+        idPendienteSeleccionar = null;
 
         vista.limpiarFormulario();
-        vista.setModoEdicion(false, null);
+
+        vista.setModoEdicion(
+                false,
+                null
+        );
     }
 
     public void seleccionarFila() {
-        int filaModelo = vista.getFilaSeleccionadaModelo();
+        int filaModelo =
+                vista.getFilaSeleccionadaModelo();
 
         if (filaModelo < 0
-                || filaModelo >= proveedores.size()) {
+                || filaModelo
+                >= proveedores.size()) {
 
             return;
         }
 
-        Proveedor proveedor = proveedores.get(filaModelo);
+        Proveedor proveedor =
+                proveedores.get(filaModelo);
 
         idProveedorSeleccionado =
                 proveedor.getIdProveedor();
@@ -74,7 +312,10 @@ public class ProveedorControlador {
         estadoProveedorSeleccionado =
                 proveedor.getEstado();
 
-        vista.mostrarProveedor(proveedor);
+        vista.mostrarProveedor(
+                proveedor
+        );
+
         vista.setModoEdicion(
                 true,
                 estadoProveedorSeleccionado
@@ -92,11 +333,13 @@ public class ProveedorControlador {
                     proveedor.getRtn(),
                     idProveedorSeleccionado
             )) {
+
                 vista.enfocarRtn();
 
                 JOptionPane.showMessageDialog(
                         vista,
-                        "Ya existe un proveedor con ese RTN.",
+                        "Ya existe un proveedor "
+                        + "con ese RTN.",
                         "RTN duplicado",
                         JOptionPane.WARNING_MESSAGE
                 );
@@ -105,13 +348,17 @@ public class ProveedorControlador {
 
             if (idProveedorSeleccionado == null) {
                 int idGenerado =
-                        proveedorDAO.insertar(proveedor);
+                        proveedorDAO.insertar(
+                                proveedor
+                        );
 
-                idProveedorSeleccionado = idGenerado;
+                idProveedorSeleccionado =
+                        idGenerado;
 
                 JOptionPane.showMessageDialog(
                         vista,
-                        "Proveedor registrado correctamente.",
+                        "Proveedor registrado "
+                        + "correctamente.",
                         "SIGIR",
                         JOptionPane.INFORMATION_MESSAGE
                 );
@@ -121,20 +368,23 @@ public class ProveedorControlador {
                         idProveedorSeleccionado
                 );
 
-                proveedorDAO.actualizar(proveedor);
+                proveedorDAO.actualizar(
+                        proveedor
+                );
 
                 JOptionPane.showMessageDialog(
                         vista,
-                        "Proveedor actualizado correctamente.",
+                        "Proveedor actualizado "
+                        + "correctamente.",
                         "SIGIR",
                         JOptionPane.INFORMATION_MESSAGE
                 );
             }
 
+            idPendienteSeleccionar =
+                    idProveedorSeleccionado;
+
             buscar();
-            seleccionarProveedorEnTabla(
-                    idProveedorSeleccionado
-            );
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
@@ -146,7 +396,8 @@ public class ProveedorControlador {
 
         } catch (SQLException ex) {
             mostrarErrorBaseDatos(
-                    "No fue posible guardar el proveedor.",
+                    "No fue posible guardar "
+                    + "el proveedor.",
                     ex
             );
         }
@@ -156,7 +407,8 @@ public class ProveedorControlador {
         if (idProveedorSeleccionado == null) {
             JOptionPane.showMessageDialog(
                     vista,
-                    "Selecciona un proveedor de la tabla.",
+                    "Selecciona un proveedor "
+                    + "de la tabla.",
                     "Proveedor no seleccionado",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -169,24 +421,34 @@ public class ProveedorControlador {
                 );
 
         String nuevoEstado =
-                estaActivo ? "INACTIVO" : "ACTIVO";
+                estaActivo
+                        ? "INACTIVO"
+                        : "ACTIVO";
 
         String accion =
-                estaActivo ? "desactivar" : "activar";
-
-        int respuesta = JOptionPane.showConfirmDialog(
-                vista,
-                "¿Deseas " + accion
-                + " al proveedor seleccionado?",
-                Character.toUpperCase(accion.charAt(0))
-                + accion.substring(1) + " proveedor",
-                JOptionPane.YES_NO_OPTION,
                 estaActivo
-                        ? JOptionPane.WARNING_MESSAGE
-                        : JOptionPane.QUESTION_MESSAGE
-        );
+                        ? "desactivar"
+                        : "activar";
 
-        if (respuesta != JOptionPane.YES_OPTION) {
+        int respuesta =
+                JOptionPane.showConfirmDialog(
+                        vista,
+                        "¿Deseas " + accion
+                        + " al proveedor seleccionado?",
+                        Character.toUpperCase(
+                                accion.charAt(0)
+                        )
+                        + accion.substring(1)
+                        + " proveedor",
+                        JOptionPane.YES_NO_OPTION,
+                        estaActivo
+                                ? JOptionPane.WARNING_MESSAGE
+                                : JOptionPane.QUESTION_MESSAGE
+                );
+
+        if (respuesta
+                != JOptionPane.YES_OPTION) {
+
             return;
         }
 
@@ -199,116 +461,149 @@ public class ProveedorControlador {
             JOptionPane.showMessageDialog(
                     vista,
                     "El proveedor ahora está "
-                    + nuevoEstado.toLowerCase() + ".",
+                    + nuevoEstado.toLowerCase()
+                    + ".",
                     "SIGIR",
                     JOptionPane.INFORMATION_MESSAGE
             );
 
+            idPendienteSeleccionar =
+                    idProveedorSeleccionado;
+
             buscar();
-            seleccionarProveedorEnTabla(
-                    idProveedorSeleccionado
-            );
 
         } catch (SQLException ex) {
             mostrarErrorBaseDatos(
-                    "No fue posible cambiar el estado del proveedor.",
+                    "No fue posible cambiar "
+                    + "el estado del proveedor.",
                     ex
             );
         }
     }
 
-    private void validar(Proveedor proveedor) {
+    private void validar(
+            Proveedor proveedor) {
 
         if (proveedor.getNombreProveedor() == null
-                || proveedor.getNombreProveedor().isBlank()) {
+                || proveedor.getNombreProveedor()
+                        .isBlank()) {
 
             vista.enfocarNombreProveedor();
 
             throw new IllegalArgumentException(
-                    "Ingresa el nombre del proveedor."
+                    "Ingresa el nombre "
+                    + "del proveedor."
             );
         }
 
-        if (proveedor.getNombreProveedor().length() > 120) {
+        if (proveedor.getNombreProveedor()
+                .length() > 120) {
+
             vista.enfocarNombreProveedor();
 
             throw new IllegalArgumentException(
-                    "El nombre del proveedor no puede superar "
+                    "El nombre del proveedor "
+                    + "no puede superar "
                     + "120 caracteres."
             );
         }
 
-        String rtn = proveedor.getRtn();
+        String rtn =
+                proveedor.getRtn();
 
-        if (rtn != null && rtn.length() > 20) {
+        if (rtn != null
+                && rtn.length() > 20) {
+
             vista.enfocarRtn();
 
             throw new IllegalArgumentException(
-                    "El RTN no puede superar 20 caracteres."
+                    "El RTN no puede superar "
+                    + "20 caracteres."
             );
         }
 
-        String contacto = proveedor.getNombreContacto();
+        String contacto =
+                proveedor.getNombreContacto();
 
-        if (contacto != null && contacto.length() > 100) {
+        if (contacto != null
+                && contacto.length() > 100) {
+
             vista.enfocarContacto();
 
             throw new IllegalArgumentException(
-                    "El nombre de contacto no puede superar "
+                    "El nombre de contacto "
+                    + "no puede superar "
                     + "100 caracteres."
             );
         }
 
-        String telefono = proveedor.getTelefono();
+        String telefono =
+                proveedor.getTelefono();
 
-        if (telefono != null && telefono.length() > 20) {
+        if (telefono != null
+                && telefono.length() > 20) {
+
             vista.enfocarTelefono();
 
             throw new IllegalArgumentException(
-                    "El teléfono no puede superar 20 caracteres."
+                    "El teléfono no puede superar "
+                    + "20 caracteres."
             );
         }
 
         if (telefono != null
-                && !telefono.matches("[0-9+()\\-\\s]{7,20}")) {
+                && !telefono.matches(
+                        "[0-9+()\\-\\s]{7,20}"
+                )) {
 
             vista.enfocarTelefono();
 
             throw new IllegalArgumentException(
-                    "El teléfono contiene caracteres no válidos."
+                    "El teléfono contiene "
+                    + "caracteres no válidos."
             );
         }
 
-        String correo = proveedor.getCorreo();
+        String correo =
+                proveedor.getCorreo();
 
-        if (correo != null && correo.length() > 100) {
+        if (correo != null
+                && correo.length() > 100) {
+
             vista.enfocarCorreo();
 
             throw new IllegalArgumentException(
-                    "El correo no puede superar 100 caracteres."
+                    "El correo no puede superar "
+                    + "100 caracteres."
             );
         }
 
         if (correo != null
                 && !correo.matches(
                         "^[A-Za-z0-9._%+-]+"
-                        + "@[A-Za-z0-9.-]+\\.[A-Za-z]{2,63}$"
+                        + "@[A-Za-z0-9.-]+"
+                        + "\\.[A-Za-z]{2,63}$"
                 )) {
 
             vista.enfocarCorreo();
 
             throw new IllegalArgumentException(
-                    "Ingresa un correo electrónico válido."
+                    "Ingresa un correo "
+                    + "electrónico válido."
             );
         }
 
-        String direccion = proveedor.getDireccion();
+        String direccion =
+                proveedor.getDireccion();
 
-        if (direccion != null && direccion.length() > 255) {
+        if (direccion != null
+                && direccion.length() > 255) {
+
             vista.enfocarDireccion();
 
             throw new IllegalArgumentException(
-                    "La dirección no puede superar 255 caracteres."
+                    "La dirección no puede superar "
+                    + "255 caracteres."
             );
         }
     }
@@ -316,8 +611,12 @@ public class ProveedorControlador {
     private void seleccionarProveedorEnTabla(
             int idProveedor) {
 
-        for (int i = 0; i < proveedores.size(); i++) {
-            if (proveedores.get(i).getIdProveedor()
+        for (int i = 0;
+                i < proveedores.size();
+                i++) {
+
+            if (proveedores.get(i)
+                    .getIdProveedor()
                     == idProveedor) {
 
                 vista.seleccionarFilaModelo(i);
@@ -329,15 +628,23 @@ public class ProveedorControlador {
 
     private void mostrarErrorBaseDatos(
             String mensaje,
-            SQLException ex) {
+            Throwable ex) {
 
         JOptionPane.showMessageDialog(
                 vista,
-                mensaje + "\n\nDetalle: " + ex.getMessage(),
+                mensaje
+                + "\n\nDetalle: "
+                + (
+                    ex == null
+                            ? "Error desconocido"
+                            : ex.getMessage()
+                ),
                 "Error de base de datos",
                 JOptionPane.ERROR_MESSAGE
         );
 
-        ex.printStackTrace();
+        if (ex != null) {
+            ex.printStackTrace();
+        }
     }
 }

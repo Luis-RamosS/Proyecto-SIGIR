@@ -28,6 +28,8 @@ public class ReparacionesPanel extends JPanel {
     private BuscadorSugerencias<Producto> buscadorProductos;
     private Cliente clienteNuevaOrden;
     private Producto productoRepuesto;
+    private boolean iniciado;
+    private boolean actualizandoControles;
 
     public ReparacionesPanel(){
         initComponents();configurarComponentes();aplicarEstilos();
@@ -35,9 +37,20 @@ public class ReparacionesPanel extends JPanel {
         configurarBuscadores();configurarEventos();
         FiltroTiempoReal.activar(txtBuscarOrden,controlador::buscarOrdenes);
         FiltroTiempoReal.activar(txtBuscarHistorial,controlador::buscarHistorial);
-        controlador.iniciar();
     }
-    public void recargar(){controlador.recargar();}
+
+    public void activar(){
+        if(!iniciado){
+            iniciado=true;
+            controlador.iniciarAsync();
+            return;
+        }
+        controlador.recargarSiNecesario();
+    }
+
+    public void recargar(){
+        controlador.recargarAsync();
+    }
 
     private void configurarComponentes(){
         moneda.setMinimumFractionDigits(2);moneda.setMaximumFractionDigits(2);
@@ -69,15 +82,34 @@ public class ReparacionesPanel extends JPanel {
     private void estilizarTabla(JTable t){t.setRowHeight(38);t.setShowVerticalLines(false);t.setGridColor(new Color(232,237,243));t.setSelectionBackground(new Color(229,239,252));t.setSelectionForeground(new Color(24,50,87));JTableHeader h=t.getTableHeader();h.setBackground(new Color(248,250,253));h.setForeground(new Color(34,59,94));h.setFont(new Font("Segoe UI",Font.BOLD,12));h.setReorderingAllowed(false);}
 
     private void configurarEventos(){
-        cmbEquipoExistente.addActionListener(e->controlador.seleccionarEquipoExistente());
+        cmbEquipoExistente.addActionListener(e->{
+            if(!actualizandoControles){
+                controlador.seleccionarEquipoExistente();
+            }
+        });
         btnRegistrarOrden.addActionListener(e->controlador.registrarOrden());btnNuevaOrden.addActionListener(e->controlador.nuevaOrden());
-        cmbEstadoFiltro.addActionListener(e->{if(cmbEstadoFiltro.getItemCount()>0)controlador.buscarOrdenes();});
+        cmbEstadoFiltro.addActionListener(e->{
+            if(!actualizandoControles&&cmbEstadoFiltro.getItemCount()>0){
+                controlador.buscarOrdenes();
+            }
+        });
         btnCargarOrden.addActionListener(e->controlador.cargarOrdenSeleccionada());btnGuardarSeguimiento.addActionListener(e->controlador.guardarSeguimiento());
         btnAgregarRepuesto.addActionListener(e->controlador.agregarRepuesto());btnCancelarOrden.addActionListener(e->controlador.cancelarOrden());
     }
 
     public void cargarClientes(List<Cliente> v){buscadorClientes.setElementos(v);} public void cargarProductos(List<Producto> v){buscadorProductos.setElementos(v);} public Cliente getClienteNuevaOrden(){return clienteNuevaOrden;}
-    public void cargarEquiposCliente(List<EquipoCliente> equipos){DefaultComboBoxModel<EquipoCliente> m=new DefaultComboBoxModel<>();m.addElement(null);equipos.forEach(m::addElement);cmbEquipoExistente.setModel(m);mostrarEquipoExistente(null);}
+    public void cargarEquiposCliente(List<EquipoCliente> equipos){
+        actualizandoControles=true;
+        try{
+            DefaultComboBoxModel<EquipoCliente> m=new DefaultComboBoxModel<>();
+            m.addElement(null);
+            equipos.forEach(m::addElement);
+            cmbEquipoExistente.setModel(m);
+            mostrarEquipoExistente(null);
+        }finally{
+            actualizandoControles=false;
+        }
+    }
     public EquipoCliente getEquipoExistenteSeleccionado(){Object v=cmbEquipoExistente.getSelectedItem();return v instanceof EquipoCliente e?e:null;}
     public void mostrarEquipoExistente(EquipoCliente e){boolean nuevo=e==null;for(JTextComponentLike c:new JTextComponentLike[]{new JTextComponentLike(txtTipoEquipo),new JTextComponentLike(txtMarcaEquipo),new JTextComponentLike(txtModeloEquipo),new JTextComponentLike(txtSerieEquipo),new JTextComponentLike(txtColorEquipo),new JTextComponentLike(txtAccesorios),new JTextComponentLike(txtObservacionesEquipo)})c.setEditable(nuevo);if(nuevo){txtTipoEquipo.setText("");txtMarcaEquipo.setText("");txtModeloEquipo.setText("");txtSerieEquipo.setText("");txtColorEquipo.setText("");txtAccesorios.setText("");txtObservacionesEquipo.setText("");}else{txtTipoEquipo.setText(texto(e.getTipoEquipo()));txtMarcaEquipo.setText(texto(e.getMarca()));txtModeloEquipo.setText(texto(e.getModelo()));txtSerieEquipo.setText(texto(e.getNumeroSerie()));txtColorEquipo.setText(texto(e.getColor()));txtAccesorios.setText(texto(e.getAccesoriosRecibidos()));txtObservacionesEquipo.setText(texto(e.getObservaciones()));}}
     private static final class JTextComponentLike{private final javax.swing.text.JTextComponent c;JTextComponentLike(javax.swing.text.JTextComponent c){this.c=c;}void setEditable(boolean v){c.setEditable(v);}}
@@ -119,7 +151,7 @@ public class ReparacionesPanel extends JPanel {
     private String opcional(String v){return v==null||v.trim().isBlank()?null:v.trim();} private String texto(String v){return v==null?"":v;}
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents(){
         pnlEncabezado=panel();lblTitulo=label("Reparaciones y Servicio Técnico",28,true);lblSubtitulo=label("Registra equipos, da seguimiento y controla los repuestos utilizados.",14,false);pnlEncabezado.add(lblTitulo);lblTitulo.setBounds(0,4,520,40);pnlEncabezado.add(lblSubtitulo);lblSubtitulo.setBounds(0,46,760,24);
         pnlTarjetaRecibidos=tarjeta("Equipos recibidos");lblRecibidosTitulo=(JLabel)pnlTarjetaRecibidos.getComponent(0);lblRecibidosValor=(JLabel)pnlTarjetaRecibidos.getComponent(1);
@@ -129,7 +161,7 @@ public class ReparacionesPanel extends JPanel {
         setBackground(new Color(247,249,252));setMinimumSize(new java.awt.Dimension(1080,700));setPreferredSize(new java.awt.Dimension(1180,760));setLayout(null);
         add(pnlEncabezado);pnlEncabezado.setBounds(28,10,1100,76);add(pnlTarjetaRecibidos);pnlTarjetaRecibidos.setBounds(28,88,330,100);add(pnlTarjetaReparacion);pnlTarjetaReparacion.setBounds(372,88,330,100);add(pnlTarjetaListos);pnlTarjetaListos.setBounds(716,88,330,100);add(tabsReparaciones);tabsReparaciones.setBounds(28,198,1070,570);
     }
-    // </editor-fold>//GEN-END:initComponents
+    // </editor-fold>                        
 
     private void crearNuevaOrden(){
         pnlNuevaOrden=panel();pnlClienteEquipo=panel();pnlDatosOrden=panel();
@@ -150,7 +182,7 @@ public class ReparacionesPanel extends JPanel {
     private void crearHistorial(){pnlHistorial=panel();pnlHistorialGeneral=panel();lblTituloHistorialGeneral=label("Historial general del servicio técnico",16,true);txtBuscarHistorial=new JTextField();tblHistorialGeneral=new JTable();scrollHistorialGeneral=new JScrollPane(tblHistorialGeneral);addComp(pnlHistorialGeneral,lblTituloHistorialGeneral,16,10,350,26);addComp(pnlHistorialGeneral,txtBuscarHistorial,16,44,350,34);addComp(pnlHistorialGeneral,scrollHistorialGeneral,0,92,1049,430);addComp(pnlHistorial,pnlHistorialGeneral,0,8,1049,530);tabsReparaciones.addTab("Historial general",pnlHistorial);}
     private JPanel panel(){JPanel p=new JPanel(null);p.setBackground(Color.WHITE);return p;} private JLabel label(String t,int s,boolean b){JLabel l=new JLabel(t);l.setFont(new Font("Segoe UI",b?Font.BOLD:Font.PLAIN,s));l.setForeground(new Color(24,50,87));return l;} private JPanel tarjeta(String t){JPanel p=panel();JLabel a=label(t,12,false),v=label("0",28,true);addComp(p,a,18,16,180,20);addComp(p,v,18,45,110,40);return p;} private void addComp(JPanel p,java.awt.Component c,int x,int y,int w,int h){p.add(c);c.setBounds(x,y,w,h);}
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private JButton btnAgregarRepuesto,btnCancelarOrden,btnCargarOrden,btnGuardarSeguimiento,btnNuevaOrden,btnRegistrarOrden;
     private JComboBox<EquipoCliente> cmbEquipoExistente; private JComboBox<String> cmbEstadoFiltro,cmbEstadoGestion;
     private JLabel lblAccesorios,lblBuscarCliente,lblBuscarRepuesto,lblCantidadRepuesto,lblClienteGestion,lblColorEquipo,lblCostoEstimado,lblCostoEstimadoGestion,lblCostoFinal,lblDescripcionCambio,lblDiagnostico,lblEquipoExistente,lblEquipoGestion,lblEstadoGestion,lblFechaPrometida,lblFechaPrometidaGestion,lblGarantiaHasta,lblListosTitulo,lblListosValor,lblMarcaEquipo,lblModeloEquipo,lblNumeroOrden,lblObservacionesEquipo,lblObservacionesGestion,lblObservacionesOrden,lblOrdenGestion,lblOrdenRepuesto,lblPrecioRepuesto,lblProblemaGestion,lblProblemaReportado,lblReparacionTitulo,lblReparacionValor,lblRecibidosTitulo,lblRecibidosValor,lblSerieEquipo,lblStockRepuesto,lblSubtitulo,lblTipoEquipo,lblTitulo,lblTituloClienteEquipo,lblTituloDatosOrden,lblTituloHistorialGeneral,lblTituloListado,lblTotalRepuestos,lblTotalRepuestosValor,lblTrabajoRealizado,lblUsuarioRecibe;
@@ -159,5 +191,5 @@ public class ReparacionesPanel extends JPanel {
     private JTabbedPane tabsReparaciones; private JTable tblHistorialGeneral,tblOrdenes,tblRepuestos;
     private JTextArea txtAccesorios,txtDiagnostico,txtObservacionesEquipo,txtObservacionesOrden,txtProblemaGestion,txtProblemaReportado,txtTrabajoRealizado;
     private JTextField txtBuscarCliente,txtBuscarHistorial,txtBuscarOrden,txtBuscarRepuesto,txtCantidadRepuesto,txtClienteGestion,txtColorEquipo,txtCostoEstimado,txtCostoEstimadoGestion,txtCostoFinal,txtDescripcionCambio,txtEquipoGestion,txtFechaPrometida,txtFechaPrometidaGestion,txtGarantiaHasta,txtMarcaEquipo,txtModeloEquipo,txtNumeroOrden,txtObservacionesGestion,txtOrdenGestion,txtOrdenRepuesto,txtPrecioRepuesto,txtSerieEquipo,txtStockRepuesto,txtTipoEquipo,txtUsuarioRecibe;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }
