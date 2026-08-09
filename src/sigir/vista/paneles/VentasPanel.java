@@ -22,6 +22,8 @@ import sigir.modelo.*;
 import sigir.util.FacturaVentaUtil;
 import sigir.util.FiltroTiempoReal;
 import sigir.util.Sesion;
+import sigir.util.CampoSeleccionUtil;
+import sigir.util.SelectorFechaUtil;
 
 public class VentasPanel extends javax.swing.JPanel {
     private static final DateTimeFormatter FORMATO_FECHA=DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -33,6 +35,7 @@ public class VentasPanel extends javax.swing.JPanel {
     private Cliente clienteSeleccionado;
     private Producto productoSeleccionado;
     private boolean iniciado;
+    private ResumenVentasDiariasPanel resumenVentasDiariasPanel;
 
     public VentasPanel(){
         initComponents();
@@ -41,6 +44,13 @@ public class VentasPanel extends javax.swing.JPanel {
         aplicarEstilos();
         configurarBuscadores();
         configurarEventos();
+        resumenVentasDiariasPanel = new ResumenVentasDiariasPanel();
+        tabsVentas.addTab("Resumen diario", resumenVentasDiariasPanel);
+        tabsVentas.addChangeListener(e -> {
+            if (tabsVentas.getSelectedComponent() == resumenVentasDiariasPanel) {
+                resumenVentasDiariasPanel.recargar();
+            }
+        });
         FiltroTiempoReal.activar(
                 txtBuscarHistorial,
                 controlador::buscarVentas
@@ -57,10 +67,12 @@ public class VentasPanel extends javax.swing.JPanel {
         }
 
         controlador.recargarSiNecesario();
+        resumenVentasDiariasPanel.recargarSiNecesario();
     }
 
     public void recargar() {
         controlador.recargarAsync();
+        resumenVentasDiariasPanel.recargar();
     }
     
     private void configurarComponentes(){
@@ -71,6 +83,13 @@ public class VentasPanel extends javax.swing.JPanel {
         txtFechaVenta.setText(LocalDate.now().format(FORMATO_FECHA)); txtFechaDesde.setText(LocalDate.now().minusMonths(1).format(FORMATO_FECHA)); txtFechaHasta.setText(LocalDate.now().format(FORMATO_FECHA));
         txtUsuario.setText(Sesion.haySesionActiva()?Sesion.getNombreCompleto():"");
         tblDetalleVenta.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); tblHistorialVentas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); tblHistorialVentas.setAutoCreateRowSorter(true);
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(
+                txtBuscarCliente, txtBuscarProducto, txtMontoRecibido,
+                txtCantidad, txtDiasGarantia, txtComprobanteTransferencia);
+        SelectorFechaUtil.instalar(txtFechaVenta, false);
+        SelectorFechaUtil.instalar(txtFechaVencimiento, true);
+        SelectorFechaUtil.instalar(txtFechaDesde, true);
+        SelectorFechaUtil.instalar(txtFechaHasta, true);
         configurarMetodoPago();
     }
 
@@ -172,13 +191,13 @@ public class VentasPanel extends javax.swing.JPanel {
     private void aplicarEstilos(){
         Color borde=new Color(220,227,236), azul=new Color(49,105,181), texto=new Color(24,50,87);
         for(JPanel p:new JPanel[]{pnlInformacionVenta,pnlResumenVenta,pnlAgregarProducto,pnlDetalleVenta,pnlFiltrosHistorial,pnlTablaHistorial}) p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borde),BorderFactory.createEmptyBorder(7,7,7,7)));
-        for(JTextField c:new JTextField[]{txtNumeroFactura,txtFechaVenta,txtUsuario,txtMontoRecibido,txtCambio,txtFechaVencimiento,txtMontoCuota,txtObservaciones,txtBuscarCliente,txtBuscarProducto,txtCantidad,txtPrecioVenta,txtStockDisponible,txtDiasGarantia,txtDescuentoPorcentaje,txtMotivoDescuento,txtBuscarHistorial,txtFechaDesde,txtFechaHasta}) c.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(205,216,229)),BorderFactory.createEmptyBorder(0,8,0,8)));
+        for(JTextField c:new JTextField[]{txtNumeroFactura,txtFechaVenta,txtUsuario,txtMontoRecibido,txtCambio,txtFechaVencimiento,txtMontoCuota,txtComprobanteTransferencia,txtObservaciones,txtBuscarCliente,txtBuscarProducto,txtCantidad,txtPrecioVenta,txtStockDisponible,txtDiasGarantia,txtDescuentoPorcentaje,txtMotivoDescuento,txtBuscarHistorial,txtFechaDesde,txtFechaHasta}) c.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(205,216,229)),BorderFactory.createEmptyBorder(0,8,0,8)));
         for(JButton b:new JButton[]{btnAgregarProducto,btnGuardarVenta}){ b.setBackground(azul); b.setForeground(Color.WHITE); b.setBorderPainted(false); b.setFocusPainted(false); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); }
         for(JButton b:new JButton[]{btnQuitarProducto,btnNuevaVenta,btnActualizarHistorial,btnVerDetalle,btnImprimirFactura,btnAnularVenta}){ b.setBackground(Color.WHITE); b.setForeground(texto); b.setBorder(BorderFactory.createLineBorder(borde)); b.setFocusPainted(false); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); }
         btnAnularVenta.setForeground(new Color(192,52,52)); estilizarTabla(tblDetalleVenta); estilizarTabla(tblHistorialVentas);
     }
 
-    private void estilizarTabla(JTable t){ t.setRowHeight(38); t.setShowVerticalLines(false); t.setGridColor(new Color(232,237,243)); t.setSelectionBackground(new Color(229,239,252)); JTableHeader h=t.getTableHeader(); h.setBackground(new Color(248,250,253)); h.setForeground(new Color(34,59,94)); h.setFont(new Font("Segoe UI",Font.BOLD,12)); h.setReorderingAllowed(false); }
+    private void estilizarTabla(JTable t){ t.setRowHeight(38); t.setShowVerticalLines(false); t.setGridColor(new Color(232,237,243)); t.setSelectionBackground(new Color(205,225,249)); t.setSelectionForeground(new Color(24,50,87)); JTableHeader h=t.getTableHeader(); h.setBackground(new Color(248,250,253)); h.setForeground(new Color(34,59,94)); h.setFont(new Font("Segoe UI",Font.BOLD,12)); h.setReorderingAllowed(false); }
 
     private void configurarEventos(){
         btnAgregarProducto.addActionListener(
@@ -200,10 +219,12 @@ public class VentasPanel extends javax.swing.JPanel {
     }
 
     private void configurarMetodoPago(){
-        String m=getMetodoPago(); boolean efectivo="EFECTIVO".equals(m), credito="CREDITO".equals(m);
+        String m=getMetodoPago(); boolean efectivo="EFECTIVO".equals(m), credito="CREDITO".equals(m), transferencia="TRANSFERENCIA".equals(m);
         txtMontoRecibido.setEnabled(efectivo); if(!efectivo)txtMontoRecibido.setText("0.00");
         txtFechaVencimiento.setEnabled(credito); txtMontoCuota.setEnabled(credito); lblFechaVencimiento.setEnabled(credito); lblMontoCuota.setEnabled(credito);
+        txtComprobanteTransferencia.setEnabled(transferencia); lblComprobanteTransferencia.setEnabled(transferencia);
         if(!credito){txtFechaVencimiento.setText("");txtMontoCuota.setText("");}
+        if(!transferencia){txtComprobanteTransferencia.setText("");}
     }
 
     public void cargarClientes(List<Cliente> clientes) {
@@ -274,14 +295,19 @@ public class VentasPanel extends javax.swing.JPanel {
         DefaultTableModel m=new DefaultTableModel(new String[]{"Código","Producto","Cantidad","Precio lista","Descuento unit. (L)","Precio final","Subtotal","Series"},0){ @Override public boolean isCellEditable(int r,int c){return c==4;} @Override public Class<?> getColumnClass(int c){return c==2?Integer.class:String.class;} };
         for(DetalleVenta d:detalles)m.addRow(new Object[]{d.getCodigoProducto(),d.getNombreProducto(),d.getCantidad(),formatearMoneda(d.getPrecioLista()),d.getDescuentoUnitario().setScale(2,RoundingMode.HALF_UP).toPlainString(),formatearMoneda(d.getPrecioUnitario()),formatearMoneda(d.getSubtotal()),d.getResumenSeries()});
         m.addTableModelListener(e->{ if(actualizandoDetalle||e.getType()!=TableModelEvent.UPDATE||e.getColumn()!=4)return; int fila=e.getFirstRow(); Object v=m.getValueAt(fila,4); SwingUtilities.invokeLater(()->controlador.actualizarDescuento(fila,v==null?"":v.toString())); });
-        tblDetalleVenta.setModel(m); actualizandoDetalle=false; estilizarTabla(tblDetalleVenta);
+        tblDetalleVenta.setModel(m);
+        JTextField editorDescuento = new JTextField();
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(editorDescuento);
+        tblDetalleVenta.getColumnModel().getColumn(4)
+                .setCellEditor(new DefaultCellEditor(editorDescuento));
+        actualizandoDetalle=false; estilizarTabla(tblDetalleVenta);
     }
 
     public int getFilaDetalleSeleccionadaModelo(){ int f=tblDetalleVenta.getSelectedRow(); return f<0?-1:tblDetalleVenta.convertRowIndexToModel(f); }
     public void actualizarResumen(int productos,int unidades,BigDecimal subtotal,BigDecimal descuento,BigDecimal porcentaje,BigDecimal total,BigDecimal cambio){ lblProductosValor.setText(String.valueOf(productos)); lblUnidadesValor.setText(String.valueOf(unidades)); lblSubtotalValor.setText(formatearMoneda(subtotal)); txtDescuentoPorcentaje.setText(porcentaje.setScale(2,RoundingMode.HALF_UP).toPlainString()+" %"); lblDescuentoMontoValor.setText(formatearMoneda(descuento)); lblTotalValor.setText(formatearMoneda(total)); txtCambio.setText(cambio.setScale(2,RoundingMode.HALF_UP).toPlainString()); }
     public void configurarDescuento(boolean hay,boolean puede){ txtMotivoDescuento.setEnabled(hay&&puede); lblEstadoDescuento.setText(!hay?"Sin descuento aplicado":puede?"Descuento autorizado por el DUEÑO actual":"Requiere autorización del DUEÑO"); if(!hay)txtMotivoDescuento.setText(""); }
 
-    public String getNumeroFactura(){return txtNumeroFactura.getText().trim();} public void setNumeroFactura(String n){txtNumeroFactura.setText(n);} public LocalDate getFechaVenta(){return fechaObligatoria(txtFechaVenta.getText(),"fecha de venta");} public String getMetodoPago(){Object v=cmbMetodoPago.getSelectedItem();return v==null?"":v.toString();} public BigDecimal getMontoRecibido(){return convertirDecimal(txtMontoRecibido.getText(),"monto recibido");} public String getObservaciones(){return opcional(txtObservaciones.getText());} public String getMotivoDescuento(){return opcional(txtMotivoDescuento.getText());} public LocalDate getFechaVencimientoCredito(){return fechaOpcional(txtFechaVencimiento.getText(),"fecha de vencimiento");} public BigDecimal getMontoCuotaCredito(){String v=txtMontoCuota.getText().trim();return v.isBlank()?null:convertirDecimal(v,"monto de cuota");}
+    public String getNumeroFactura(){return txtNumeroFactura.getText().trim();} public void setNumeroFactura(String n){txtNumeroFactura.setText(n);} public LocalDate getFechaVenta(){return fechaObligatoria(txtFechaVenta.getText(),"fecha de venta");} public String getMetodoPago(){Object v=cmbMetodoPago.getSelectedItem();return v==null?"":v.toString();} public BigDecimal getMontoRecibido(){return convertirDecimal(txtMontoRecibido.getText(),"monto recibido");} public String getObservaciones(){return opcional(txtObservaciones.getText());} public String getComprobanteTransferencia(){return opcional(txtComprobanteTransferencia.getText());} public String getMotivoDescuento(){return opcional(txtMotivoDescuento.getText());} public LocalDate getFechaVencimientoCredito(){return fechaOpcional(txtFechaVencimiento.getText(),"fecha de vencimiento");} public BigDecimal getMontoCuotaCredito(){String v=txtMontoCuota.getText().trim();return v.isBlank()?null:convertirDecimal(v,"monto de cuota");}
 
     public void limpiarVenta() {
         clienteSeleccionado = null;
@@ -301,6 +327,7 @@ public class VentasPanel extends javax.swing.JPanel {
         txtMontoRecibido.setText("0.00");
         txtCambio.setText("0.00");
         txtObservaciones.setText("");
+        txtComprobanteTransferencia.setText("");
         txtMotivoDescuento.setText("");
         txtFechaVencimiento.setText("");
         txtMontoCuota.setText("");
@@ -337,7 +364,7 @@ public class VentasPanel extends javax.swing.JPanel {
 
     public String getTextoBusquedaHistorial(){return txtBuscarHistorial.getText().trim();} public LocalDate getFechaDesdeFiltro(){return fechaOpcional(txtFechaDesde.getText(),"fecha inicial");} public LocalDate getFechaHastaFiltro(){return fechaOpcional(txtFechaHasta.getText(),"fecha final");} public String getMetodoPagoFiltro(){Object v=cmbMetodoFiltro.getSelectedItem();return v==null?"TODOS":v.toString();} public String getEstadoFiltro(){Object v=cmbEstadoFiltro.getSelectedItem();return v==null?"TODOS":v.toString();}
 
-    public void mostrarVentas(List<Venta> ventas){ DefaultTableModel m=new DefaultTableModel(new String[]{"ID","Factura","Fecha","Cliente","Vendedor","Método","Descuento","Total","Estado"},0){@Override public boolean isCellEditable(int r,int c){return false;} @Override public Class<?> getColumnClass(int c){return c==0?Integer.class:String.class;}}; DateTimeFormatter f=DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"); for(Venta v:ventas)m.addRow(new Object[]{v.getIdVenta(),v.getNumeroFactura(),v.getFechaVenta()==null?"":v.getFechaVenta().format(f),v.getNombreCliente(),v.getNombreUsuario(),v.getMetodoPago(),formatearMoneda(v.getDescuento()),formatearMoneda(v.getTotal()),v.getEstado()}); tblHistorialVentas.setModel(m); estilizarTabla(tblHistorialVentas); }
+    public void mostrarVentas(List<Venta> ventas){ DefaultTableModel m=new DefaultTableModel(new String[]{"ID","Factura","Fecha","Cliente","Vendedor","Método","Descuento","Total","Pagado","Saldo","Estado"},0){@Override public boolean isCellEditable(int r,int c){return false;} @Override public Class<?> getColumnClass(int c){return c==0?Integer.class:String.class;}}; DateTimeFormatter f=DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"); for(Venta v:ventas){ BigDecimal pagado="CREDITO".equalsIgnoreCase(v.getTipoVenta())?v.getMontoPagado().min(v.getTotal()):v.getTotal(); BigDecimal saldo=v.getTotal().subtract(pagado).max(BigDecimal.ZERO); m.addRow(new Object[]{v.getIdVenta(),v.getNumeroFactura(),v.getFechaVenta()==null?"":v.getFechaVenta().format(f),v.getNombreCliente(),v.getNombreUsuario(),v.getMetodoPago(),formatearMoneda(v.getDescuento()),formatearMoneda(v.getTotal()),formatearMoneda(pagado),formatearMoneda(saldo),v.getEstado()}); } tblHistorialVentas.setModel(m); estilizarTabla(tblHistorialVentas); }
     public int getFilaVentaSeleccionadaModelo(){int f=tblHistorialVentas.getSelectedRow();return f<0?-1:tblHistorialVentas.convertRowIndexToModel(f);} public void mostrarCantidadVentas(int c){lblCantidadVentas.setText(c==1?"Mostrando 1 venta":"Mostrando "+c+" ventas");} public void mostrarPestanaHistorial(){tabsVentas.setSelectedIndex(1);}
 
     public void mostrarFactura(Venta venta,boolean imprimir){ JTextArea a=new JTextArea(FacturaVentaUtil.generarTexto(venta),28,58); a.setEditable(false); a.setFont(new Font("Consolas",Font.PLAIN,13)); JScrollPane s=new JScrollPane(a); if(!imprimir){JOptionPane.showMessageDialog(this,s,"Detalle de venta",JOptionPane.INFORMATION_MESSAGE);return;} Object[] op={"Imprimir","Cerrar"}; if(JOptionPane.showOptionDialog(this,s,"Factura",JOptionPane.DEFAULT_OPTION,JOptionPane.INFORMATION_MESSAGE,null,op,op[0])==0)try{a.print();}catch(PrinterException ex){JOptionPane.showMessageDialog(this,ex.getMessage(),"Error de impresión",JOptionPane.ERROR_MESSAGE);} }
@@ -349,11 +376,11 @@ public class VentasPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents(){
         pnlEncabezado=new JPanel(null); lblTitulo=new JLabel("Facturación / Ventas"); lblSubtitulo=new JLabel("Registra ventas, descuentos por producto y genera la factura."); tabsVentas=new JTabbedPane(); pnlNuevaVenta=new JPanel(null); pnlHistorial=new JPanel(null);
         pnlInformacionVenta=new JPanel(null); pnlResumenVenta=new JPanel(null); pnlAgregarProducto=new JPanel(null); pnlDetalleVenta=new JPanel(null); pnlFiltrosHistorial=new JPanel(null); pnlTablaHistorial=new JPanel(null);
-        lblTituloInformacion=new JLabel("Información de la venta"); lblFactura=new JLabel("Número de factura"); txtNumeroFactura=new JTextField(); lblFechaVenta=new JLabel("Fecha"); txtFechaVenta=new JTextField(); lblCliente=new JLabel("Buscar cliente"); txtBuscarCliente=new JTextField(); lblUsuario=new JLabel("Vendedor"); txtUsuario=new JTextField(); lblMetodoPago=new JLabel("Método de pago"); cmbMetodoPago=new JComboBox<>(); lblMontoRecibido=new JLabel("Monto recibido"); txtMontoRecibido=new JTextField("0.00"); lblCambio=new JLabel("Cambio"); txtCambio=new JTextField("0.00"); lblFechaVencimiento=new JLabel("Vencimiento"); txtFechaVencimiento=new JTextField(); lblMontoCuota=new JLabel("Monto cuota"); txtMontoCuota=new JTextField(); lblObservaciones=new JLabel("Observaciones"); txtObservaciones=new JTextField();
+        lblTituloInformacion=new JLabel("Información de la venta"); lblFactura=new JLabel("Número de factura"); txtNumeroFactura=new JTextField(); lblFechaVenta=new JLabel("Fecha"); txtFechaVenta=new JTextField(); lblCliente=new JLabel("Buscar cliente"); txtBuscarCliente=new JTextField(); lblUsuario=new JLabel("Vendedor"); txtUsuario=new JTextField(); lblMetodoPago=new JLabel("Método de pago"); cmbMetodoPago=new JComboBox<>(); lblMontoRecibido=new JLabel("Monto recibido"); txtMontoRecibido=new JTextField("0.00"); lblCambio=new JLabel("Cambio"); txtCambio=new JTextField("0.00"); lblFechaVencimiento=new JLabel("Vencimiento"); txtFechaVencimiento=new JTextField(); lblMontoCuota=new JLabel("Monto cuota"); txtMontoCuota=new JTextField(); lblComprobanteTransferencia=new JLabel("Comprobante transferencia"); txtComprobanteTransferencia=new JTextField(); lblObservaciones=new JLabel("Observaciones"); txtObservaciones=new JTextField();
         lblTituloResumen=new JLabel("Resumen de la venta"); lblProductos=new JLabel("Productos"); lblProductosValor=new JLabel("0",SwingConstants.RIGHT); lblUnidades=new JLabel("Unidades"); lblUnidadesValor=new JLabel("0",SwingConstants.RIGHT); lblSubtotal=new JLabel("Subtotal"); lblSubtotalValor=new JLabel("L 0.00",SwingConstants.RIGHT); lblDescuentoPorcentaje=new JLabel("Descuento total (%)"); txtDescuentoPorcentaje=new JTextField("0.00 %"); lblDescuentoMonto=new JLabel("Descuento total"); lblDescuentoMontoValor=new JLabel("L 0.00",SwingConstants.RIGHT); lblTotal=new JLabel("TOTAL"); lblTotalValor=new JLabel("L 0.00",SwingConstants.RIGHT); lblMotivoDescuento=new JLabel("Motivo del descuento"); txtMotivoDescuento=new JTextField(); lblEstadoDescuento=new JLabel("Sin descuento aplicado");
         lblTituloAgregarProducto=new JLabel("Agregar producto"); lblBuscarProducto=new JLabel("Buscar producto"); txtBuscarProducto=new JTextField(); lblCantidad=new JLabel("Cantidad"); txtCantidad=new JTextField("1"); lblPrecioVenta=new JLabel("Precio"); txtPrecioVenta=new JTextField("0.00"); lblStockDisponible=new JLabel("Stock"); txtStockDisponible=new JTextField("0"); lblDiasGarantia=new JLabel("Garantía (días)"); txtDiasGarantia=new JTextField("0"); btnAgregarProducto=new JButton("+ Agregar"); lblAvisoSerie=new JLabel("Selecciona un producto para ver sus datos.");
         lblTituloDetalle=new JLabel("Detalle de productos"); tblDetalleVenta=new JTable(); scrollDetalleVenta=new JScrollPane(tblDetalleVenta); btnQuitarProducto=new JButton("Quitar producto"); btnNuevaVenta=new JButton("Nueva venta"); btnGuardarVenta=new JButton("Guardar / Cobrar");
@@ -364,20 +391,20 @@ public class VentasPanel extends javax.swing.JPanel {
         for(JPanel p:new JPanel[]{pnlInformacionVenta,pnlResumenVenta,pnlAgregarProducto,pnlDetalleVenta,pnlFiltrosHistorial,pnlTablaHistorial})p.setBackground(Color.WHITE);
         addLabel(pnlInformacionVenta,lblTituloInformacion,16,8,250,25,16,true); addLabel(pnlInformacionVenta,lblFactura,16,38,130,18,11,true); addField(pnlInformacionVenta,txtNumeroFactura,16,57,220,32); addLabel(pnlInformacionVenta,lblFechaVenta,248,38,70,18,11,true); addField(pnlInformacionVenta,txtFechaVenta,248,57,120,32); addLabel(pnlInformacionVenta,lblCliente,380,38,130,18,11,true); addField(pnlInformacionVenta,txtBuscarCliente,380,57,280,32);
         addLabel(pnlInformacionVenta,lblUsuario,16,96,100,18,11,true);addField(pnlInformacionVenta,txtUsuario,16,115,220,32);addLabel(pnlInformacionVenta,lblMetodoPago,248,96,110,18,11,true);pnlInformacionVenta.add(cmbMetodoPago);cmbMetodoPago.setBounds(248,115,160,32);addLabel(pnlInformacionVenta,lblMontoRecibido,420,96,110,18,11,true);addField(pnlInformacionVenta,txtMontoRecibido,420,115,105,32);addLabel(pnlInformacionVenta,lblCambio,537,96,70,18,11,true);addField(pnlInformacionVenta,txtCambio,537,115,123,32);
-        addLabel(pnlInformacionVenta,lblFechaVencimiento,16,155,100,18,11,true);addField(pnlInformacionVenta,txtFechaVencimiento,16,174,140,31);addLabel(pnlInformacionVenta,lblMontoCuota,168,155,100,18,11,true);addField(pnlInformacionVenta,txtMontoCuota,168,174,120,31);addLabel(pnlInformacionVenta,lblObservaciones,300,155,100,18,11,true);addField(pnlInformacionVenta,txtObservaciones,300,174,360,31);pnlNuevaVenta.add(pnlInformacionVenta);pnlInformacionVenta.setBounds(0,8,685,220);
+        addLabel(pnlInformacionVenta,lblFechaVencimiento,16,155,100,18,11,true);addField(pnlInformacionVenta,txtFechaVencimiento,16,174,120,31);addLabel(pnlInformacionVenta,lblMontoCuota,148,155,100,18,11,true);addField(pnlInformacionVenta,txtMontoCuota,148,174,105,31);addLabel(pnlInformacionVenta,lblComprobanteTransferencia,265,155,170,18,11,true);addField(pnlInformacionVenta,txtComprobanteTransferencia,265,174,180,31);addLabel(pnlInformacionVenta,lblObservaciones,457,155,100,18,11,true);addField(pnlInformacionVenta,txtObservaciones,457,174,203,31);pnlNuevaVenta.add(pnlInformacionVenta);pnlInformacionVenta.setBounds(0,8,685,220);
         addLabel(pnlResumenVenta,lblTituloResumen,16,8,220,25,16,true);addLabel(pnlResumenVenta,lblProductos,16,40,100,20,12,false);addLabel(pnlResumenVenta,lblProductosValor,230,38,90,24,18,true);addLabel(pnlResumenVenta,lblUnidades,16,66,100,20,12,false);addLabel(pnlResumenVenta,lblUnidadesValor,230,64,90,24,18,true);addLabel(pnlResumenVenta,lblSubtotal,16,93,100,20,12,false);addLabel(pnlResumenVenta,lblSubtotalValor,160,91,160,24,14,true);addLabel(pnlResumenVenta,lblDescuentoPorcentaje,16,120,145,20,12,false);addField(pnlResumenVenta,txtDescuentoPorcentaje,200,116,120,29);addLabel(pnlResumenVenta,lblDescuentoMonto,16,150,130,20,12,false);addLabel(pnlResumenVenta,lblDescuentoMontoValor,160,148,160,24,13,true);addLabel(pnlResumenVenta,lblTotal,16,178,80,22,14,true);addLabel(pnlResumenVenta,lblTotalValor,125,173,195,32,22,true);addLabel(pnlResumenVenta,lblMotivoDescuento,16,207,140,18,10,true);addField(pnlResumenVenta,txtMotivoDescuento,160,204,160,30);addLabel(pnlResumenVenta,lblEstadoDescuento,16,232,300,16,9,false);pnlNuevaVenta.add(pnlResumenVenta);pnlResumenVenta.setBounds(699,8,350,250);
         addLabel(pnlAgregarProducto,lblTituloAgregarProducto,16,7,200,25,16,true);addLabel(pnlAgregarProducto,lblBuscarProducto,16,38,120,16,10,true);addField(pnlAgregarProducto,txtBuscarProducto,16,55,457,32);addLabel(pnlAgregarProducto,lblCantidad,485,38,65,16,10,true);addField(pnlAgregarProducto,txtCantidad,485,55,65,32);addLabel(pnlAgregarProducto,lblPrecioVenta,562,38,60,16,10,true);addField(pnlAgregarProducto,txtPrecioVenta,562,55,95,32);addLabel(pnlAgregarProducto,lblStockDisponible,669,38,60,16,10,true);addField(pnlAgregarProducto,txtStockDisponible,669,55,65,32);addLabel(pnlAgregarProducto,lblDiasGarantia,746,38,95,16,10,true);addField(pnlAgregarProducto,txtDiasGarantia,746,55,85,32);pnlAgregarProducto.add(btnAgregarProducto);btnAgregarProducto.setBounds(846,49,180,38);addLabel(pnlAgregarProducto,lblAvisoSerie,16,91,800,17,10,false);pnlNuevaVenta.add(pnlAgregarProducto);pnlAgregarProducto.setBounds(0,270,1049,115);
         addLabel(pnlDetalleVenta,lblTituloDetalle,16,7,220,25,16,true);pnlDetalleVenta.add(scrollDetalleVenta);scrollDetalleVenta.setBounds(0,37,1049,155);pnlDetalleVenta.add(btnQuitarProducto);btnQuitarProducto.setBounds(16,202,145,36);pnlDetalleVenta.add(btnNuevaVenta);btnNuevaVenta.setBounds(700,202,140,36);pnlDetalleVenta.add(btnGuardarVenta);btnGuardarVenta.setBounds(852,202,180,36);pnlNuevaVenta.add(pnlDetalleVenta);pnlDetalleVenta.setBounds(0,397,1049,248);
         addLabel(pnlFiltrosHistorial,lblTituloFiltros,16,8,200,25,16,true);addField(pnlFiltrosHistorial,txtBuscarHistorial,16,43,250,34);addLabel(pnlFiltrosHistorial,lblDesde,278,36,60,15,10,true);addField(pnlFiltrosHistorial,txtFechaDesde,278,52,120,30);addLabel(pnlFiltrosHistorial,lblHasta,410,36,60,15,10,true);addField(pnlFiltrosHistorial,txtFechaHasta,410,52,120,30);pnlFiltrosHistorial.add(cmbMetodoFiltro);cmbMetodoFiltro.setBounds(542,43,155,34);pnlFiltrosHistorial.add(cmbEstadoFiltro);cmbEstadoFiltro.setBounds(709,43,145,34);pnlFiltrosHistorial.add(btnActualizarHistorial);btnActualizarHistorial.setBounds(866,43,110,34);pnlHistorial.add(pnlFiltrosHistorial);pnlFiltrosHistorial.setBounds(0,8,1049,95);
         addLabel(pnlTablaHistorial,lblTituloHistorial,16,8,210,25,16,true);pnlTablaHistorial.add(scrollHistorialVentas);scrollHistorialVentas.setBounds(0,37,1049,475);addLabel(pnlTablaHistorial,lblCantidadVentas,16,518,260,22,11,false);pnlTablaHistorial.add(btnVerDetalle);btnVerDetalle.setBounds(610,514,120,36);pnlTablaHistorial.add(btnImprimirFactura);btnImprimirFactura.setBounds(742,514,115,36);pnlTablaHistorial.add(btnAnularVenta);btnAnularVenta.setBounds(869,514,145,36);pnlHistorial.add(pnlTablaHistorial);pnlTablaHistorial.setBounds(0,115,1049,560);
         tabsVentas.addTab("Nueva venta",pnlNuevaVenta);tabsVentas.addTab("Historial",pnlHistorial);add(tabsVentas);tabsVentas.setBounds(28,86,1070,700);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
     private void addLabel(JPanel p,JLabel l,int x,int y,int w,int h,int size,boolean bold){l.setFont(new Font("Segoe UI",bold?Font.BOLD:Font.PLAIN,size));l.setForeground(new Color(38,64,99));p.add(l);l.setBounds(x,y,w,h);} private void addField(JPanel p,JTextField f,int x,int y,int w,int h){f.setFont(new Font("Segoe UI",Font.PLAIN,12));p.add(f);f.setBounds(x,y,w,h);}
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private JPanel pnlEncabezado,pnlNuevaVenta,pnlHistorial,pnlInformacionVenta,pnlResumenVenta,pnlAgregarProducto,pnlDetalleVenta,pnlFiltrosHistorial,pnlTablaHistorial;
-    private JTabbedPane tabsVentas; private JLabel lblTitulo,lblSubtitulo,lblTituloInformacion,lblFactura,lblFechaVenta,lblCliente,lblUsuario,lblMetodoPago,lblMontoRecibido,lblCambio,lblFechaVencimiento,lblMontoCuota,lblObservaciones,lblTituloResumen,lblProductos,lblProductosValor,lblUnidades,lblUnidadesValor,lblSubtotal,lblSubtotalValor,lblDescuentoPorcentaje,lblDescuentoMonto,lblDescuentoMontoValor,lblTotal,lblTotalValor,lblMotivoDescuento,lblEstadoDescuento,lblTituloAgregarProducto,lblBuscarProducto,lblCantidad,lblPrecioVenta,lblStockDisponible,lblDiasGarantia,lblAvisoSerie,lblTituloDetalle,lblTituloFiltros,lblDesde,lblHasta,lblTituloHistorial,lblCantidadVentas;
-    private JTextField txtNumeroFactura,txtFechaVenta,txtUsuario,txtMontoRecibido,txtCambio,txtFechaVencimiento,txtMontoCuota,txtObservaciones,txtDescuentoPorcentaje,txtMotivoDescuento,txtBuscarCliente,txtBuscarProducto,txtCantidad,txtPrecioVenta,txtStockDisponible,txtDiasGarantia,txtBuscarHistorial,txtFechaDesde,txtFechaHasta; private JComboBox<String> cmbMetodoPago,cmbMetodoFiltro,cmbEstadoFiltro; private JButton btnAgregarProducto,btnQuitarProducto,btnNuevaVenta,btnGuardarVenta,btnActualizarHistorial,btnVerDetalle,btnImprimirFactura,btnAnularVenta; private JTable tblDetalleVenta,tblHistorialVentas; private JScrollPane scrollDetalleVenta,scrollHistorialVentas;
-    // End of variables declaration                   
+    private JTabbedPane tabsVentas; private JLabel lblTitulo,lblSubtitulo,lblTituloInformacion,lblFactura,lblFechaVenta,lblCliente,lblUsuario,lblMetodoPago,lblMontoRecibido,lblCambio,lblFechaVencimiento,lblMontoCuota,lblComprobanteTransferencia,lblObservaciones,lblTituloResumen,lblProductos,lblProductosValor,lblUnidades,lblUnidadesValor,lblSubtotal,lblSubtotalValor,lblDescuentoPorcentaje,lblDescuentoMonto,lblDescuentoMontoValor,lblTotal,lblTotalValor,lblMotivoDescuento,lblEstadoDescuento,lblTituloAgregarProducto,lblBuscarProducto,lblCantidad,lblPrecioVenta,lblStockDisponible,lblDiasGarantia,lblAvisoSerie,lblTituloDetalle,lblTituloFiltros,lblDesde,lblHasta,lblTituloHistorial,lblCantidadVentas;
+    private JTextField txtNumeroFactura,txtFechaVenta,txtUsuario,txtMontoRecibido,txtCambio,txtFechaVencimiento,txtMontoCuota,txtComprobanteTransferencia,txtObservaciones,txtDescuentoPorcentaje,txtMotivoDescuento,txtBuscarCliente,txtBuscarProducto,txtCantidad,txtPrecioVenta,txtStockDisponible,txtDiasGarantia,txtBuscarHistorial,txtFechaDesde,txtFechaHasta; private JComboBox<String> cmbMetodoPago,cmbMetodoFiltro,cmbEstadoFiltro; private JButton btnAgregarProducto,btnQuitarProducto,btnNuevaVenta,btnGuardarVenta,btnActualizarHistorial,btnVerDetalle,btnImprimirFactura,btnAnularVenta; private JTable tblDetalleVenta,tblHistorialVentas; private JScrollPane scrollDetalleVenta,scrollHistorialVentas;
+    // End of variables declaration//GEN-END:variables
 }

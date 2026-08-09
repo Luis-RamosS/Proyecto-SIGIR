@@ -673,24 +673,16 @@ public class InicioPanel
         setPreferredSize(new java.awt.Dimension(1180, 760));
         setLayout(null);
 
-        pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblBienvenida.setFont(new java.awt.Font("Segoe UI", 1, 28));
-        lblBienvenida.setForeground(new java.awt.Color(24, 50, 87));
         lblBienvenida.setText("¡Bienvenido!");
         pnlEncabezado.add(lblBienvenida);
         lblBienvenida.setBounds(0, 0, 760, 40);
 
-        lblDescripcion.setFont(new java.awt.Font("Segoe UI", 0, 14));
-        lblDescripcion.setForeground(new java.awt.Color(98, 124, 159));
         lblDescripcion.setText("Resumen real de tu inventario y operaciones.");
         pnlEncabezado.add(lblDescripcion);
         lblDescripcion.setBounds(0, 42, 650, 24);
 
-        lblFecha.setBackground(new java.awt.Color(255, 255, 255));
-        lblFecha.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblFecha.setOpaque(true);
         lblFecha.setText("Fecha actual");
         pnlEncabezado.add(lblFecha);
         lblFecha.setBounds(760, 4, 250, 38);
@@ -699,7 +691,6 @@ public class InicioPanel
         pnlEncabezado.add(btnActualizar);
         btnActualizar.setBounds(1022, 4, 100, 38);
 
-        lblEstadoCarga.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         lblEstadoCarga.setText("Listo");
         pnlEncabezado.add(lblEstadoCarga);
         lblEstadoCarga.setBounds(760, 48, 362, 20);
@@ -709,175 +700,189 @@ public class InicioPanel
 
         pnlVentasHoy.setBackground(new java.awt.Color(255, 255, 255));
         pnlVentasHoy.setLayout(null);
+
         lblVentasTitulo.setText("Ventas de hoy");
         pnlVentasHoy.add(lblVentasTitulo);
         lblVentasTitulo.setBounds(16, 12, 180, 20);
-        lblVentasValor.setFont(new java.awt.Font("Segoe UI", 1, 27));
-        lblVentasValor.setForeground(new java.awt.Color(24, 50, 87));
+
         lblVentasValor.setText("0");
         pnlVentasHoy.add(lblVentasValor);
         lblVentasValor.setBounds(16, 36, 180, 38);
-        lblVentasDetalle.setForeground(new java.awt.Color(98, 124, 159));
+
         lblVentasDetalle.setText("L 0.00 vendido hoy");
         pnlVentasHoy.add(lblVentasDetalle);
         lblVentasDetalle.setBounds(16, 73, 185, 18);
+
         btnVerVentasTarjeta.setText("Ver ventas");
         pnlVentasHoy.add(btnVerVentasTarjeta);
         btnVerVentasTarjeta.setBounds(10, 94, 185, 25);
+
         add(pnlVentasHoy);
         pnlVentasHoy.setBounds(28, 92, 210, 124);
 
         pnlProductos.setBackground(new java.awt.Color(255, 255, 255));
         pnlProductos.setLayout(null);
+
         lblProductosTitulo.setText("Productos registrados");
         pnlProductos.add(lblProductosTitulo);
         lblProductosTitulo.setBounds(16, 12, 180, 20);
-        lblProductosValor.setFont(new java.awt.Font("Segoe UI", 1, 27));
-        lblProductosValor.setForeground(new java.awt.Color(24, 50, 87));
+
         lblProductosValor.setText("0");
         pnlProductos.add(lblProductosValor);
         lblProductosValor.setBounds(16, 36, 180, 38);
-        lblProductosDetalle.setForeground(new java.awt.Color(98, 124, 159));
+
         lblProductosDetalle.setText("productos activos");
         pnlProductos.add(lblProductosDetalle);
         lblProductosDetalle.setBounds(16, 73, 185, 18);
+
         btnVerProductos.setText("Ver productos");
         pnlProductos.add(btnVerProductos);
         btnVerProductos.setBounds(10, 94, 185, 25);
+
         add(pnlProductos);
         pnlProductos.setBounds(250, 92, 210, 124);
 
         pnlStockBajo.setBackground(new java.awt.Color(255, 255, 255));
         pnlStockBajo.setLayout(null);
+
         lblStockTitulo.setText("Stock bajo");
         pnlStockBajo.add(lblStockTitulo);
         lblStockTitulo.setBounds(16, 12, 180, 20);
-        lblStockValor.setFont(new java.awt.Font("Segoe UI", 1, 27));
-        lblStockValor.setForeground(new java.awt.Color(216, 126, 25));
+
         lblStockValor.setText("0");
         pnlStockBajo.add(lblStockValor);
         lblStockValor.setBounds(16, 36, 180, 38);
-        lblStockDetalle.setForeground(new java.awt.Color(98, 124, 159));
+
         lblStockDetalle.setText("productos requieren atención");
         pnlStockBajo.add(lblStockDetalle);
         lblStockDetalle.setBounds(16, 73, 185, 18);
+
         btnVerInventarioTarjeta.setText("Ver inventario");
         pnlStockBajo.add(btnVerInventarioTarjeta);
         btnVerInventarioTarjeta.setBounds(10, 94, 185, 25);
+
         add(pnlStockBajo);
         pnlStockBajo.setBounds(472, 92, 210, 124);
 
         pnlCreditos.setBackground(new java.awt.Color(255, 255, 255));
         pnlCreditos.setLayout(null);
+
         lblCreditosTitulo.setText("Créditos pendientes");
         pnlCreditos.add(lblCreditosTitulo);
         lblCreditosTitulo.setBounds(16, 12, 180, 20);
-        lblCreditosValor.setFont(new java.awt.Font("Segoe UI", 1, 27));
-        lblCreditosValor.setForeground(new java.awt.Color(192, 52, 52));
+
         lblCreditosValor.setText("0");
         pnlCreditos.add(lblCreditosValor);
         lblCreditosValor.setBounds(16, 36, 180, 38);
-        lblCreditosDetalle.setForeground(new java.awt.Color(98, 124, 159));
+
         lblCreditosDetalle.setText("Saldo: L 0.00");
         pnlCreditos.add(lblCreditosDetalle);
         lblCreditosDetalle.setBounds(16, 73, 185, 18);
+
         btnVerCreditos.setText("Ver créditos");
         pnlCreditos.add(btnVerCreditos);
         btnVerCreditos.setBounds(10, 94, 185, 25);
+
         add(pnlCreditos);
         pnlCreditos.setBounds(694, 92, 210, 124);
 
         pnlReparaciones.setBackground(new java.awt.Color(255, 255, 255));
         pnlReparaciones.setLayout(null);
+
         lblReparacionesTitulo.setText("Reparaciones pendientes");
         pnlReparaciones.add(lblReparacionesTitulo);
         lblReparacionesTitulo.setBounds(16, 12, 180, 20);
-        lblReparacionesValor.setFont(new java.awt.Font("Segoe UI", 1, 27));
-        lblReparacionesValor.setForeground(new java.awt.Color(122, 73, 196));
+
         lblReparacionesValor.setText("0");
         pnlReparaciones.add(lblReparacionesValor);
         lblReparacionesValor.setBounds(16, 36, 180, 38);
-        lblReparacionesDetalle.setForeground(new java.awt.Color(98, 124, 159));
+
         lblReparacionesDetalle.setText("órdenes sin finalizar");
         pnlReparaciones.add(lblReparacionesDetalle);
         lblReparacionesDetalle.setBounds(16, 73, 185, 18);
+
         btnVerReparaciones.setText("Ver reparaciones");
         pnlReparaciones.add(btnVerReparaciones);
         btnVerReparaciones.setBounds(10, 94, 185, 25);
+
         add(pnlReparaciones);
         pnlReparaciones.setBounds(916, 92, 210, 124);
 
         pnlVentasRecientes.setBackground(new java.awt.Color(255, 255, 255));
         pnlVentasRecientes.setLayout(null);
-        lblVentasRecientesTitulo.setFont(new java.awt.Font("Segoe UI", 1, 16));
+
         lblVentasRecientesTitulo.setText("Ventas recientes");
         pnlVentasRecientes.add(lblVentasRecientesTitulo);
         lblVentasRecientesTitulo.setBounds(16, 9, 240, 26);
-        btnVerVentas.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+
         btnVerVentas.setText("Ver todas");
         pnlVentasRecientes.add(btnVerVentas);
         btnVerVentas.setBounds(420, 9, 105, 26);
+
         scrollVentas.setViewportView(tblVentasRecientes);
+
         pnlVentasRecientes.add(scrollVentas);
         scrollVentas.setBounds(0, 44, 545, 238);
+
         add(pnlVentasRecientes);
         pnlVentasRecientes.setBounds(28, 230, 545, 290);
 
         pnlProductosStock.setBackground(new java.awt.Color(255, 255, 255));
         pnlProductosStock.setLayout(null);
-        lblStockTablaTitulo.setFont(new java.awt.Font("Segoe UI", 1, 16));
+
         lblStockTablaTitulo.setText("Productos con poco inventario");
         pnlProductosStock.add(lblStockTablaTitulo);
         lblStockTablaTitulo.setBounds(16, 9, 300, 26);
-        btnVerInventario.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+
         btnVerInventario.setText("Ver todos");
         pnlProductosStock.add(btnVerInventario);
         btnVerInventario.setBounds(420, 9, 105, 26);
+
         scrollStock.setViewportView(tblStockBajo);
+
         pnlProductosStock.add(scrollStock);
         scrollStock.setBounds(0, 44, 545, 238);
+
         add(pnlProductosStock);
         pnlProductosStock.setBounds(585, 230, 545, 290);
 
         pnlActividad.setBackground(new java.awt.Color(255, 255, 255));
         pnlActividad.setLayout(null);
-        lblActividadTitulo.setFont(new java.awt.Font("Segoe UI", 1, 16));
+
         lblActividadTitulo.setText("Actividad de los últimos 7 días");
         pnlActividad.add(lblActividadTitulo);
         lblActividadTitulo.setBounds(16, 10, 310, 24);
-        lblActividadSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
+
         lblActividadSubtitulo.setText("Ventas, compras, inventario, abonos y reparaciones");
         pnlActividad.add(lblActividadSubtitulo);
         lblActividadSubtitulo.setBounds(16, 34, 430, 20);
         pnlActividad.add(graficoActividad);
         graficoActividad.setBounds(16, 57, 720, 145);
-        lblTotalSemanaTitulo.setForeground(new java.awt.Color(98, 124, 159));
+
         lblTotalSemanaTitulo.setText("Total de operaciones");
         pnlActividad.add(lblTotalSemanaTitulo);
         lblTotalSemanaTitulo.setBounds(770, 30, 180, 20);
-        lblTotalSemanaValor.setFont(new java.awt.Font("Segoe UI", 1, 24));
-        lblTotalSemanaValor.setForeground(new java.awt.Color(24, 50, 87));
+
         lblTotalSemanaValor.setText("0");
         pnlActividad.add(lblTotalSemanaValor);
         lblTotalSemanaValor.setBounds(770, 52, 180, 34);
-        lblPromedioTitulo.setForeground(new java.awt.Color(98, 124, 159));
+
         lblPromedioTitulo.setText("Promedio diario");
         pnlActividad.add(lblPromedioTitulo);
         lblPromedioTitulo.setBounds(770, 96, 160, 20);
-        lblPromedioValor.setFont(new java.awt.Font("Segoe UI", 1, 20));
-        lblPromedioValor.setForeground(new java.awt.Color(24, 50, 87));
+
         lblPromedioValor.setText("0");
         pnlActividad.add(lblPromedioValor);
         lblPromedioValor.setBounds(770, 118, 160, 28);
-        lblMejorDiaTitulo.setForeground(new java.awt.Color(98, 124, 159));
+
         lblMejorDiaTitulo.setText("Día con más actividad");
         pnlActividad.add(lblMejorDiaTitulo);
         lblMejorDiaTitulo.setBounds(940, 96, 170, 20);
-        lblMejorDiaValor.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        lblMejorDiaValor.setForeground(new java.awt.Color(49, 105, 181));
+
         lblMejorDiaValor.setText("Sin actividad");
         pnlActividad.add(lblMejorDiaValor);
         lblMejorDiaValor.setBounds(940, 118, 175, 48);
+
         add(pnlActividad);
         pnlActividad.setBounds(28, 534, 1102, 218);
     }// </editor-fold>//GEN-END:initComponents

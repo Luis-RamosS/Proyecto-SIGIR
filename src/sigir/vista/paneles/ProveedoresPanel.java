@@ -598,7 +598,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -801,9 +801,9 @@ public class ProveedoresPanel extends javax.swing.JPanel {
 
         add(pnlLista);
         pnlLista.setBounds(28, 390, 1110, 344);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizar;
     private javax.swing.JButton btnCambiarEstado;
     private javax.swing.JButton btnGuardar;
@@ -836,5 +836,5 @@ public class ProveedoresPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtNombreProveedor;
     private javax.swing.JTextField txtRtn;
     private javax.swing.JTextField txtTelefono;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

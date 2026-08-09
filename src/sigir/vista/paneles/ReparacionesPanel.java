@@ -19,6 +19,8 @@ import sigir.controlador.ReparacionControlador;
 import sigir.modelo.*;
 import sigir.util.FiltroTiempoReal;
 import sigir.util.Sesion;
+import sigir.util.CampoSeleccionUtil;
+import sigir.util.SelectorFechaUtil;
 
 public class ReparacionesPanel extends JPanel {
     private static final DateTimeFormatter FECHA=DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -63,6 +65,9 @@ public class ReparacionesPanel extends JPanel {
         tblRepuestos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblHistorialGeneral.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);tblHistorialGeneral.setAutoCreateRowSorter(true);
         txtFechaPrometida.setText(LocalDate.now().plusDays(3).format(FECHA));
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(txtBuscarCliente, txtBuscarRepuesto, txtBuscarOrden, txtBuscarHistorial);
+        SelectorFechaUtil.instalar(txtFechaPrometida, true);
+        SelectorFechaUtil.instalar(txtFechaPrometidaGestion, true);
     }
 
     private void configurarBuscadores(){
@@ -151,7 +156,7 @@ public class ReparacionesPanel extends JPanel {
     private String opcional(String v){return v==null||v.trim().isBlank()?null:v.trim();} private String texto(String v){return v==null?"":v;}
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents(){
         pnlEncabezado=panel();lblTitulo=label("Reparaciones y Servicio Técnico",28,true);lblSubtitulo=label("Registra equipos, da seguimiento y controla los repuestos utilizados.",14,false);pnlEncabezado.add(lblTitulo);lblTitulo.setBounds(0,4,520,40);pnlEncabezado.add(lblSubtitulo);lblSubtitulo.setBounds(0,46,760,24);
         pnlTarjetaRecibidos=tarjeta("Equipos recibidos");lblRecibidosTitulo=(JLabel)pnlTarjetaRecibidos.getComponent(0);lblRecibidosValor=(JLabel)pnlTarjetaRecibidos.getComponent(1);
@@ -160,8 +165,7 @@ public class ReparacionesPanel extends JPanel {
         tabsReparaciones=new JTabbedPane();crearNuevaOrden();crearSeguimiento();crearRepuestos();crearHistorial();
         setBackground(new Color(247,249,252));setMinimumSize(new java.awt.Dimension(1080,700));setPreferredSize(new java.awt.Dimension(1180,760));setLayout(null);
         add(pnlEncabezado);pnlEncabezado.setBounds(28,10,1100,76);add(pnlTarjetaRecibidos);pnlTarjetaRecibidos.setBounds(28,88,330,100);add(pnlTarjetaReparacion);pnlTarjetaReparacion.setBounds(372,88,330,100);add(pnlTarjetaListos);pnlTarjetaListos.setBounds(716,88,330,100);add(tabsReparaciones);tabsReparaciones.setBounds(28,198,1070,570);
-    }
-    // </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
     private void crearNuevaOrden(){
         pnlNuevaOrden=panel();pnlClienteEquipo=panel();pnlDatosOrden=panel();
@@ -182,7 +186,7 @@ public class ReparacionesPanel extends JPanel {
     private void crearHistorial(){pnlHistorial=panel();pnlHistorialGeneral=panel();lblTituloHistorialGeneral=label("Historial general del servicio técnico",16,true);txtBuscarHistorial=new JTextField();tblHistorialGeneral=new JTable();scrollHistorialGeneral=new JScrollPane(tblHistorialGeneral);addComp(pnlHistorialGeneral,lblTituloHistorialGeneral,16,10,350,26);addComp(pnlHistorialGeneral,txtBuscarHistorial,16,44,350,34);addComp(pnlHistorialGeneral,scrollHistorialGeneral,0,92,1049,430);addComp(pnlHistorial,pnlHistorialGeneral,0,8,1049,530);tabsReparaciones.addTab("Historial general",pnlHistorial);}
     private JPanel panel(){JPanel p=new JPanel(null);p.setBackground(Color.WHITE);return p;} private JLabel label(String t,int s,boolean b){JLabel l=new JLabel(t);l.setFont(new Font("Segoe UI",b?Font.BOLD:Font.PLAIN,s));l.setForeground(new Color(24,50,87));return l;} private JPanel tarjeta(String t){JPanel p=panel();JLabel a=label(t,12,false),v=label("0",28,true);addComp(p,a,18,16,180,20);addComp(p,v,18,45,110,40);return p;} private void addComp(JPanel p,java.awt.Component c,int x,int y,int w,int h){p.add(c);c.setBounds(x,y,w,h);}
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private JButton btnAgregarRepuesto,btnCancelarOrden,btnCargarOrden,btnGuardarSeguimiento,btnNuevaOrden,btnRegistrarOrden;
     private JComboBox<EquipoCliente> cmbEquipoExistente; private JComboBox<String> cmbEstadoFiltro,cmbEstadoGestion;
     private JLabel lblAccesorios,lblBuscarCliente,lblBuscarRepuesto,lblCantidadRepuesto,lblClienteGestion,lblColorEquipo,lblCostoEstimado,lblCostoEstimadoGestion,lblCostoFinal,lblDescripcionCambio,lblDiagnostico,lblEquipoExistente,lblEquipoGestion,lblEstadoGestion,lblFechaPrometida,lblFechaPrometidaGestion,lblGarantiaHasta,lblListosTitulo,lblListosValor,lblMarcaEquipo,lblModeloEquipo,lblNumeroOrden,lblObservacionesEquipo,lblObservacionesGestion,lblObservacionesOrden,lblOrdenGestion,lblOrdenRepuesto,lblPrecioRepuesto,lblProblemaGestion,lblProblemaReportado,lblReparacionTitulo,lblReparacionValor,lblRecibidosTitulo,lblRecibidosValor,lblSerieEquipo,lblStockRepuesto,lblSubtitulo,lblTipoEquipo,lblTitulo,lblTituloClienteEquipo,lblTituloDatosOrden,lblTituloHistorialGeneral,lblTituloListado,lblTotalRepuestos,lblTotalRepuestosValor,lblTrabajoRealizado,lblUsuarioRecibe;
@@ -191,5 +195,5 @@ public class ReparacionesPanel extends JPanel {
     private JTabbedPane tabsReparaciones; private JTable tblHistorialGeneral,tblOrdenes,tblRepuestos;
     private JTextArea txtAccesorios,txtDiagnostico,txtObservacionesEquipo,txtObservacionesOrden,txtProblemaGestion,txtProblemaReportado,txtTrabajoRealizado;
     private JTextField txtBuscarCliente,txtBuscarHistorial,txtBuscarOrden,txtBuscarRepuesto,txtCantidadRepuesto,txtClienteGestion,txtColorEquipo,txtCostoEstimado,txtCostoEstimadoGestion,txtCostoFinal,txtDescripcionCambio,txtEquipoGestion,txtFechaPrometida,txtFechaPrometidaGestion,txtGarantiaHasta,txtMarcaEquipo,txtModeloEquipo,txtNumeroOrden,txtObservacionesGestion,txtOrdenGestion,txtOrdenRepuesto,txtPrecioRepuesto,txtSerieEquipo,txtStockRepuesto,txtTipoEquipo,txtUsuarioRecibe;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

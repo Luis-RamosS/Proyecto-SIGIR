@@ -23,6 +23,13 @@ public final class FacturaVentaUtil {
         sb.append("CLIENTE: ").append(venta.getNombreCliente()).append('\n');
         sb.append("VENDEDOR: ").append(venta.getNombreUsuario()).append('\n');
         sb.append("PAGO: ").append(venta.getMetodoPago()).append('\n');
+        if ("TRANSFERENCIA".equalsIgnoreCase(venta.getMetodoPago())
+                && venta.getComprobanteTransferencia() != null
+                && !venta.getComprobanteTransferencia().isBlank()) {
+            sb.append("COMPROBANTE: ")
+                    .append(venta.getComprobanteTransferencia())
+                    .append('\n');
+        }
         sb.append("---------------------------------------------\n");
         for (DetalleVenta d : venta.getDetalles()) {
             sb.append(d.getCodigoProducto()).append(" - ").append(d.getNombreProducto()).append('\n');

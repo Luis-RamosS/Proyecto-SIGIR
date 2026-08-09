@@ -23,6 +23,7 @@ import sigir.modelo.MovimientoInventario;
 import sigir.modelo.Producto;
 import sigir.modelo.ResumenInventario;
 import sigir.util.FiltroTiempoReal;
+import sigir.util.SelectorFechaUtil;
 
 public class InventarioPanel extends javax.swing.JPanel {
 
@@ -94,6 +95,7 @@ public class InventarioPanel extends javax.swing.JPanel {
                             "TODOS",
                             "ENTRADA_COMPRA",
                             "SALIDA_VENTA",
+                            "SALIDA_VENTA_RAPIDA",
                             "SALIDA_REPARACION",
                             "AJUSTE_ENTRADA",
                             "AJUSTE_SALIDA",
@@ -121,6 +123,9 @@ public class InventarioPanel extends javax.swing.JPanel {
         txtFechaHasta.setText(
                 LocalDate.now().format(FORMATO_FECHA)
         );
+
+        SelectorFechaUtil.instalar(txtFechaDesde, true);
+        SelectorFechaUtil.instalar(txtFechaHasta, true);
 
         txtStockActualAjuste.setEditable(false);
         txtStockActualAjuste.setFocusable(false);
@@ -908,7 +913,7 @@ public class InventarioPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1330,9 +1335,9 @@ public class InventarioPanel extends javax.swing.JPanel {
 
         add(tabsInventario);
         tabsInventario.setBounds(28, 198, 1100, 650);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizarExistencias;
     private javax.swing.JButton btnActualizarMovimientos;
     private javax.swing.JButton btnLimpiarAjuste;
@@ -1400,5 +1405,5 @@ public class InventarioPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtFechaHasta;
     private javax.swing.JTextArea txtMotivoAjuste;
     private javax.swing.JTextField txtStockActualAjuste;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

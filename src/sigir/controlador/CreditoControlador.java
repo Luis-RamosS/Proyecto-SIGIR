@@ -3,6 +3,7 @@ package sigir.controlador;
 import java.awt.Cursor;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -266,6 +267,10 @@ public class CreditoControlador {
             }
 
             BigDecimal monto = vista.getMontoAbono();
+            LocalDate fechaAbono = vista.getFechaAbono();
+            if (fechaAbono.isAfter(LocalDate.now())) {
+                throw new IllegalArgumentException("La fecha del abono no puede estar en el futuro.");
+            }
             if (monto.signum() <= 0) {
                 throw new IllegalArgumentException("El monto del abono debe ser mayor que cero.");
             }
@@ -298,7 +303,8 @@ public class CreditoControlador {
                     monto,
                     vista.getMetodoPagoAbono(),
                     vista.getReferenciaAbono(),
-                    vista.getObservacionesAbono()
+                    vista.getObservacionesAbono(),
+                    fechaAbono
             );
 
             JOptionPane.showMessageDialog(

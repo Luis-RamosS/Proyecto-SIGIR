@@ -27,6 +27,7 @@ import sigir.modelo.ResumenReportes;
 import sigir.modelo.TipoReporte;
 import sigir.modelo.UsuarioFiltro;
 import sigir.util.FiltroTiempoReal;
+import sigir.util.SelectorFechaUtil;
 
 public class ReportesPanel extends javax.swing.JPanel {
 
@@ -94,6 +95,9 @@ public class ReportesPanel extends javax.swing.JPanel {
         txtFechaHasta.setText(
                 hoy.format(FORMATO_FECHA)
         );
+
+        SelectorFechaUtil.instalar(txtFechaDesde, false);
+        SelectorFechaUtil.instalar(txtFechaHasta, false);
 
         txtDescripcionReporte.setEditable(false);
         txtDescripcionReporte.setFocusable(false);
@@ -700,7 +704,7 @@ public class ReportesPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -868,7 +872,7 @@ public class ReportesPanel extends javax.swing.JPanel {
 
         add(tabsResultados);
         tabsResultados.setBounds(28, 334, 1070, 438);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
     private void crearTarjeta(
             javax.swing.JPanel panel,
@@ -914,7 +918,7 @@ public class ReportesPanel extends javax.swing.JPanel {
         etiqueta.setBounds(x, y, ancho, 18);
     }
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnConsultar;
     private javax.swing.JButton btnExportar;
     private javax.swing.JButton btnImprimir;
@@ -959,5 +963,5 @@ public class ReportesPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtDescripcionReporte;
     private javax.swing.JTextField txtFechaDesde;
     private javax.swing.JTextField txtFechaHasta;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

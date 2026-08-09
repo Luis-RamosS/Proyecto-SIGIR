@@ -16,6 +16,7 @@ import sigir.vista.paneles.ProveedoresPanel;
 import sigir.vista.paneles.ComprasPanel;
 import sigir.vista.paneles.InventarioPanel;
 import sigir.vista.paneles.VentasPanel;
+import sigir.vista.paneles.VentaRapidaPanel;
 import sigir.vista.paneles.CreditosPanel;
 import sigir.vista.paneles.ReparacionesPanel;
 import sigir.vista.paneles.UsuariosPanel;
@@ -43,6 +44,7 @@ public class FrmInicio extends javax.swing.JFrame {
     private ComprasPanel comprasPanel;
     private InventarioPanel inventarioPanel;
     private VentasPanel ventasPanel;
+    private VentaRapidaPanel ventaRapidaPanel;
     private CreditosPanel creditosPanel;
     private ReparacionesPanel reparacionesPanel;
     private UsuariosPanel usuariosPanel;
@@ -56,6 +58,7 @@ public class FrmInicio extends javax.swing.JFrame {
 
         btnInicio.setText("Inicio");
         btnVentas.setText("Ventas");
+        btnVentaRapida.setText("Venta rápida");
         btnCompras.setText("Compras");
         btnProductos.setText("Productos");
         btnInventario.setText("Inventario");
@@ -105,6 +108,7 @@ public class FrmInicio extends javax.swing.JFrame {
 
         javax.swing.SwingUtilities.invokeLater(() -> {
             btnInicio.doClick();
+            preguntarVentaRapida();
         });
     }
 
@@ -140,6 +144,24 @@ public class FrmInicio extends javax.swing.JFrame {
 }
     
 
+
+    private void preguntarVentaRapida() {
+        if (!Sesion.haySesionActiva() || !Sesion.esDueno()) {
+            return;
+        }
+
+        int respuesta = JOptionPane.showConfirmDialog(
+                this,
+                "¿Se realizó alguna venta rápida fuera del horario de atención?",
+                "Venta rápida pendiente",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (respuesta == JOptionPane.YES_OPTION) {
+            btnVentaRapida.doClick();
+        }
+    }
 
     private void configurarVentana() {
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
@@ -220,6 +242,7 @@ public class FrmInicio extends javax.swing.JFrame {
         return new javax.swing.JButton[]{
             btnInicio,
             btnVentas,
+            btnVentaRapida,
             btnCompras,
             btnProductos,
             btnInventario,
@@ -343,6 +366,7 @@ public class FrmInicio extends javax.swing.JFrame {
      * que abre el módulo de usuarios.
          */
         btnUsuarios.setVisible(esDueno);
+        btnVentaRapida.setVisible(esDueno);
     }
     private void mostrarPanel(
             javax.swing.JComponent panel) {
@@ -384,7 +408,7 @@ public class FrmInicio extends javax.swing.JFrame {
         }
 
         javax.swing.JButton[] botonesMenu = {
-            btnInicio, btnVentas, btnCompras, btnProductos, btnInventario,
+            btnInicio, btnVentas, btnVentaRapida, btnCompras, btnProductos, btnInventario,
             btnClientes, btnProveedores, btnCreditos, btnReparaciones,
             btnUsuarios, btnReportes, btnConfiguracion
         };
@@ -481,6 +505,25 @@ public class FrmInicio extends javax.swing.JFrame {
             mostrarModulo(
                     btnInicio,
                     obtenerInicioPanel() );
+        });
+
+        btnVentaRapida.addActionListener(e -> {
+            if (!Sesion.esDueno()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Solo el dueño puede registrar ventas rápidas.",
+                        "Acceso restringido",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            if (ventaRapidaPanel == null) {
+                ventaRapidaPanel = new VentaRapidaPanel();
+            }
+
+            mostrarModulo(btnVentaRapida, ventaRapidaPanel);
+            ventaRapidaPanel.activar();
         });
 
         btnCompras.addActionListener(e -> {
@@ -700,6 +743,7 @@ public class FrmInicio extends javax.swing.JFrame {
         lblSubMarca = new javax.swing.JLabel();
         btnInicio = new javax.swing.JButton();
         btnVentas = new javax.swing.JButton();
+        btnVentaRapida = new javax.swing.JButton();
         btnCompras = new javax.swing.JButton();
         btnProductos = new javax.swing.JButton();
         btnInventario = new javax.swing.JButton();
@@ -800,7 +844,7 @@ public class FrmInicio extends javax.swing.JFrame {
             }
         });
         pnlMenu.add(btnCerrarSesion);
-        btnCerrarSesion.setBounds(20, 690, 210, 50);
+        btnCerrarSesion.setBounds(20, 676, 210, 42);
 
         lblSubMarca.setFont(new java.awt.Font("Segoe UI", 0, 11)); // NOI18N
         lblSubMarca.setForeground(new java.awt.Color(75, 108, 151));
@@ -813,79 +857,85 @@ public class FrmInicio extends javax.swing.JFrame {
         btnInicio.setForeground(new java.awt.Color(255, 255, 255));
         btnInicio.setText("⌂   Inicio");
         pnlMenu.add(btnInicio);
-        btnInicio.setBounds(16, 112, 218, 44);
+        btnInicio.setBounds(16, 104, 218, 42);
 
         btnVentas.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnVentas.setForeground(new java.awt.Color(49, 85, 132));
         btnVentas.setText("🛒  Ventas");
         pnlMenu.add(btnVentas);
-        btnVentas.setBounds(16, 160, 218, 44);
+        btnVentas.setBounds(16, 147, 218, 42);
+
+        btnVentaRapida.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        btnVentaRapida.setForeground(new java.awt.Color(49, 85, 132));
+        btnVentaRapida.setText("Venta rápida");
+        pnlMenu.add(btnVentaRapida);
+        btnVentaRapida.setBounds(16, 190, 218, 42);
 
         btnCompras.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnCompras.setForeground(new java.awt.Color(49, 85, 132));
         btnCompras.setText("▣   Compras");
         pnlMenu.add(btnCompras);
-        btnCompras.setBounds(16, 208, 218, 44);
+        btnCompras.setBounds(16, 233, 218, 42);
 
         btnProductos.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnProductos.setForeground(new java.awt.Color(49, 85, 132));
         btnProductos.setText("◇   Productos");
         pnlMenu.add(btnProductos);
-        btnProductos.setBounds(16, 256, 218, 44);
+        btnProductos.setBounds(16, 276, 218, 42);
 
         btnInventario.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnInventario.setForeground(new java.awt.Color(49, 85, 132));
         btnInventario.setText("▤   Inventario");
         pnlMenu.add(btnInventario);
-        btnInventario.setBounds(16, 304, 218, 44);
+        btnInventario.setBounds(16, 319, 218, 42);
 
         btnClientes.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnClientes.setForeground(new java.awt.Color(49, 85, 132));
         btnClientes.setText("♙   Clientes");
         pnlMenu.add(btnClientes);
-        btnClientes.setBounds(16, 352, 218, 44);
+        btnClientes.setBounds(16, 362, 218, 42);
 
         btnProveedores.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnProveedores.setForeground(new java.awt.Color(49, 85, 132));
         btnProveedores.setText("▱   Proveedores");
         pnlMenu.add(btnProveedores);
-        btnProveedores.setBounds(16, 400, 218, 44);
+        btnProveedores.setBounds(16, 405, 218, 42);
 
         btnCreditos.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnCreditos.setForeground(new java.awt.Color(49, 85, 132));
         btnCreditos.setText("▧   Créditos");
         pnlMenu.add(btnCreditos);
-        btnCreditos.setBounds(16, 448, 218, 44);
+        btnCreditos.setBounds(16, 448, 218, 42);
 
         btnReparaciones.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnReparaciones.setForeground(new java.awt.Color(49, 85, 132));
         btnReparaciones.setText("🔧  Reparaciones");
         pnlMenu.add(btnReparaciones);
-        btnReparaciones.setBounds(16, 496, 218, 44);
+        btnReparaciones.setBounds(16, 491, 218, 42);
 
         btnUsuarios.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnUsuarios.setForeground(new java.awt.Color(49, 85, 132));
         btnUsuarios.setText("♙   Usuarios");
         pnlMenu.add(btnUsuarios);
-        btnUsuarios.setBounds(16, 544, 218, 44);
+        btnUsuarios.setBounds(16, 534, 218, 42);
 
         btnReportes.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnReportes.setForeground(new java.awt.Color(49, 85, 132));
         btnReportes.setText("▥   Reportes");
         pnlMenu.add(btnReportes);
-        btnReportes.setBounds(16, 592, 218, 44);
+        btnReportes.setBounds(16, 577, 218, 42);
 
         lblVersion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblVersion.setForeground(new java.awt.Color(65, 98, 143));
         lblVersion.setText("◉   SIGIR v1.0.0");
         pnlMenu.add(lblVersion);
-        lblVersion.setBounds(30, 790, 150, 24);
+        lblVersion.setBounds(30, 735, 150, 24);
 
         btnConfiguracion.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         btnConfiguracion.setForeground(new java.awt.Color(49, 85, 132));
         btnConfiguracion.setText("⚙   Configuración ");
         pnlMenu.add(btnConfiguracion);
-        btnConfiguracion.setBounds(16, 640, 218, 44);
+        btnConfiguracion.setBounds(16, 620, 218, 42);
 
         getContentPane().add(pnlMenu, java.awt.BorderLayout.WEST);
 
@@ -1270,6 +1320,7 @@ public class FrmInicio extends javax.swing.JFrame {
     private javax.swing.JButton btnReportes;
     private javax.swing.JButton btnUsuarios;
     private javax.swing.JButton btnVentas;
+    private javax.swing.JButton btnVentaRapida;
     private javax.swing.JButton btnVerInventario;
     private javax.swing.JButton btnVerVentas;
     private javax.swing.JLabel lblActividadSubtitulo;

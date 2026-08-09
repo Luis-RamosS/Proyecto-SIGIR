@@ -879,7 +879,7 @@ public class ConfiguracionPanel
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1280,9 +1280,9 @@ public class ConfiguracionPanel
 
         add(tabsConfiguracion);
         tabsConfiguracion.setBounds(28, 195, 1070, 565);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCrearRespaldo;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnProbarConexion;
@@ -1373,5 +1373,5 @@ public class ConfiguracionPanel
     private javax.swing.JTextField txtSmtpUsuario;
     private javax.swing.JTextField txtTelefono;
     private javax.swing.JTextField txtUltimaActualizacion;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

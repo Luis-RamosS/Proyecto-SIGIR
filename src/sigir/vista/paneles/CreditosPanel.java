@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +24,8 @@ import sigir.controlador.CreditoControlador;
 import sigir.modelo.AbonoCredito;
 import sigir.modelo.Credito;
 import sigir.util.FiltroTiempoReal;
+import sigir.util.CampoSeleccionUtil;
+import sigir.util.SelectorFechaUtil;
 
 public class CreditosPanel extends javax.swing.JPanel {
 
@@ -114,6 +117,10 @@ public class CreditosPanel extends javax.swing.JPanel {
 
         tblCreditos.setAutoCreateRowSorter(true);
         tblAbonos.setAutoCreateRowSorter(true);
+
+        txtFechaAbono.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        SelectorFechaUtil.instalar(txtFechaAbono, false);
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(txtMontoAbono, txtReferencia, txtBuscarCredito, txtBuscarAbono);
     }
 
     private void aplicarEstilos() {
@@ -379,6 +386,14 @@ public class CreditosPanel extends javax.swing.JPanel {
         }
     }
 
+    public LocalDate getFechaAbono() {
+        try {
+            return LocalDate.parse(txtFechaAbono.getText().trim(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Selecciona una fecha válida para el abono.");
+        }
+    }
+
     public String getMetodoPagoAbono() {
         Object valor = cmbMetodoPago.getSelectedItem();
         return valor == null ? "" : valor.toString();
@@ -401,6 +416,7 @@ public class CreditosPanel extends javax.swing.JPanel {
         txtSaldoAbono.setText("0.00");
         txtCuotaAbono.setText("0.00");
         txtMontoAbono.setText("0.00");
+        txtFechaAbono.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         txtReferencia.setText("");
         txtObservacionesAbono.setText("");
     }
@@ -534,7 +550,7 @@ public class CreditosPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -572,6 +588,8 @@ public class CreditosPanel extends javax.swing.JPanel {
         txtCuotaAbono = new javax.swing.JTextField();
         lblMontoAbono = new javax.swing.JLabel();
         txtMontoAbono = new javax.swing.JTextField();
+        lblFechaAbono = new javax.swing.JLabel();
+        txtFechaAbono = new javax.swing.JTextField();
         lblMetodoPago = new javax.swing.JLabel();
         cmbMetodoPago = new javax.swing.JComboBox<>();
         lblReferencia = new javax.swing.JLabel();
@@ -706,16 +724,22 @@ public class CreditosPanel extends javax.swing.JPanel {
 
         lblCuotaAbono.setText("Cuota sugerida");
         pnlAbono.add(lblCuotaAbono);
-        lblCuotaAbono.setBounds(16, 234, 120, 18);
+        lblCuotaAbono.setBounds(16, 234, 95, 18);
         pnlAbono.add(txtCuotaAbono);
-        txtCuotaAbono.setBounds(16, 254, 145, 34);
+        txtCuotaAbono.setBounds(16, 254, 94, 34);
 
         lblMontoAbono.setText("Monto del abono");
         pnlAbono.add(lblMontoAbono);
-        lblMontoAbono.setBounds(173, 234, 130, 18);
+        lblMontoAbono.setBounds(118, 234, 100, 18);
         txtMontoAbono.setText("0.00");
         pnlAbono.add(txtMontoAbono);
-        txtMontoAbono.setBounds(173, 254, 153, 34);
+        txtMontoAbono.setBounds(118, 254, 94, 34);
+
+        lblFechaAbono.setText("Fecha del abono");
+        pnlAbono.add(lblFechaAbono);
+        lblFechaAbono.setBounds(220, 234, 106, 18);
+        pnlAbono.add(txtFechaAbono);
+        txtFechaAbono.setBounds(220, 254, 106, 34);
 
         lblMetodoPago.setText("Forma de pago");
         pnlAbono.add(lblMetodoPago);
@@ -766,9 +790,9 @@ public class CreditosPanel extends javax.swing.JPanel {
 
         add(tabsCreditos);
         tabsCreditos.setBounds(28, 205, 1070, 565);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnEstadoCuenta;
     private javax.swing.JButton btnRegistrarAbono;
     private javax.swing.JComboBox<Credito> cmbCreditoAbono;
@@ -778,6 +802,7 @@ public class CreditosPanel extends javax.swing.JPanel {
     private javax.swing.JLabel lblCredito;
     private javax.swing.JLabel lblCuotaAbono;
     private javax.swing.JLabel lblFacturaAbono;
+    private javax.swing.JLabel lblFechaAbono;
     private javax.swing.JLabel lblMetodoPago;
     private javax.swing.JLabel lblMontoAbono;
     private javax.swing.JLabel lblObservacionesAbono;
@@ -813,9 +838,10 @@ public class CreditosPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtClienteAbono;
     private javax.swing.JTextField txtCuotaAbono;
     private javax.swing.JTextField txtFacturaAbono;
+    private javax.swing.JTextField txtFechaAbono;
     private javax.swing.JTextField txtMontoAbono;
     private javax.swing.JTextArea txtObservacionesAbono;
     private javax.swing.JTextField txtReferencia;
     private javax.swing.JTextField txtSaldoAbono;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

@@ -409,7 +409,7 @@ public class VentaControlador {
     private Venta construirVenta(Cliente c){
         Venta v=new Venta(); v.setIdCliente(c.getIdCliente()); v.setNombreCliente(c.getNombreCompleto()); v.setIdUsuario(Sesion.getIdUsuario()); v.setNombreUsuario(Sesion.getNombreCompleto()); v.setNumeroFactura(vista.getNumeroFactura());
         LocalDate fecha=vista.getFechaVenta(); v.setFechaVenta(LocalDateTime.of(fecha,fecha.equals(LocalDate.now())?LocalTime.now().withNano(0):LocalTime.NOON));
-        v.setMetodoPago(vista.getMetodoPago()); v.setTipoVenta("CREDITO".equals(v.getMetodoPago())?"CREDITO":"CONTADO"); v.setDetalles(new ArrayList<>(detalles)); v.setObservaciones(vista.getObservaciones());
+        v.setMetodoPago(vista.getMetodoPago()); v.setTipoVenta("CREDITO".equals(v.getMetodoPago())?"CREDITO":"CONTADO"); v.setDetalles(new ArrayList<>(detalles)); v.setObservaciones(vista.getObservaciones()); v.setComprobanteTransferencia(vista.getComprobanteTransferencia());
         if(v.getDescuento().compareTo(BigDecimal.ZERO)>0){ v.setIdUsuarioAutorizaDescuento(Sesion.getIdUsuario()); v.setTipoDescuento("AUTORIZADO"); v.setMotivoDescuento(vista.getMotivoDescuento()); }
         switch(v.getMetodoPago()){
             case "EFECTIVO" -> { BigDecimal recibido=vista.getMontoRecibido(); v.setMontoPagado(recibido); v.setCambio(recibido.subtract(v.getTotal()).max(BigDecimal.ZERO)); }
@@ -428,6 +428,7 @@ public class VentaControlador {
             if(v.getMotivoDescuento()==null||v.getMotivoDescuento().trim().length()<5) throw new IllegalArgumentException("Escribe el motivo del descuento con al menos 5 caracteres.");
         }
         if("EFECTIVO".equals(v.getMetodoPago())&&v.getMontoPagado().compareTo(v.getTotal())<0) throw new IllegalArgumentException("El monto recibido no cubre el total.");
+        if("TRANSFERENCIA".equals(v.getMetodoPago()) && (v.getComprobanteTransferencia()==null || v.getComprobanteTransferencia().isBlank())) throw new IllegalArgumentException("Ingresa el comprobante o referencia de la transferencia.");
         if("CREDITO".equals(v.getTipoVenta())){
             if(v.getFechaVencimientoCredito()!=null&&v.getFechaVencimientoCredito().isBefore(v.getFechaVenta().toLocalDate())) throw new IllegalArgumentException("La fecha de vencimiento no puede ser anterior a la venta.");
             if(v.getMontoCuotaCredito()!=null&&v.getMontoCuotaCredito().compareTo(BigDecimal.ZERO)<=0) throw new IllegalArgumentException("La cuota debe ser mayor que cero.");

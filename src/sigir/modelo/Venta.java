@@ -28,6 +28,7 @@ public class Venta {
     private BigDecimal cambio = BigDecimal.ZERO;
     private String estado;
     private String observaciones;
+    private String comprobanteTransferencia;
     private LocalDate fechaVencimientoCredito;
     private BigDecimal montoCuotaCredito;
     private final List<DetalleVenta> detalles = new ArrayList<>();
@@ -80,6 +81,8 @@ public class Venta {
     public void setEstado(String estado) { this.estado = estado; }
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
+    public String getComprobanteTransferencia() { return comprobanteTransferencia; }
+    public void setComprobanteTransferencia(String comprobanteTransferencia) { this.comprobanteTransferencia = comprobanteTransferencia; }
     public LocalDate getFechaVencimientoCredito() { return fechaVencimientoCredito; }
     public void setFechaVencimientoCredito(LocalDate fechaVencimientoCredito) { this.fechaVencimientoCredito = fechaVencimientoCredito; }
     public BigDecimal getMontoCuotaCredito() { return montoCuotaCredito; }

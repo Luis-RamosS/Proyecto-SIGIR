@@ -842,7 +842,7 @@ public class UsuariosPanel
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1101,9 +1101,9 @@ public class UsuariosPanel
 
         add(pnlFormularioUsuario);
         pnlFormularioUsuario.setBounds(722, 200, 376, 550);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizar;
     private javax.swing.JButton btnGuardarUsuario;
     private javax.swing.JButton btnNuevoUsuario;
@@ -1151,5 +1151,5 @@ public class UsuariosPanel
     private javax.swing.JTextField txtNombreCompleto;
     private javax.swing.JTextField txtNombreUsuario;
     private javax.swing.JTextField txtTelefono;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

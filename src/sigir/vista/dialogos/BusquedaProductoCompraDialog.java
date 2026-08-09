@@ -22,6 +22,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import sigir.modelo.Producto;
+import sigir.util.CampoSeleccionUtil;
 
 public class BusquedaProductoCompraDialog
         extends javax.swing.JDialog {
@@ -56,6 +57,7 @@ public class BusquedaProductoCompraDialog
         configurarComponentes();
         aplicarEstilos();
         configurarEventos();
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(txtBuscar);
         cargarFiltros();
         aplicarFiltros();
 

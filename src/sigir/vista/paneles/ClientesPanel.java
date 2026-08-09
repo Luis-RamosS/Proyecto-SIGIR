@@ -667,12 +667,9 @@ public class ClientesPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        pnlEncabezado = new javax.swing.JPanel();
-        lblTitulo = new javax.swing.JLabel();
-        lblSubtitulo = new javax.swing.JLabel();
         pnlInformacion = new javax.swing.JPanel();
         lblTituloInformacion = new javax.swing.JLabel();
         lblNombre = new javax.swing.JLabel();
@@ -703,29 +700,14 @@ public class ClientesPanel extends javax.swing.JPanel {
         scrollClientes = new javax.swing.JScrollPane();
         tblClientes = new javax.swing.JTable();
         lblCantidad = new javax.swing.JLabel();
+        pnlEncabezado = new javax.swing.JPanel();
+        lblTitulo = new javax.swing.JLabel();
+        lblSubtitulo = new javax.swing.JLabel();
 
         setBackground(new java.awt.Color(247, 249, 252));
         setMinimumSize(new java.awt.Dimension(1080, 700));
         setPreferredSize(new java.awt.Dimension(1180, 760));
         setLayout(null);
-
-        pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
-        pnlEncabezado.setLayout(null);
-
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
-        lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
-        lblTitulo.setText("Gestión de Clientes");
-        pnlEncabezado.add(lblTitulo);
-        lblTitulo.setBounds(0, 4, 390, 40);
-
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
-        lblSubtitulo.setText("Administra la información de tus clientes.");
-        pnlEncabezado.add(lblSubtitulo);
-        lblSubtitulo.setBounds(0, 46, 520, 24);
-
-        add(pnlEncabezado);
-        pnlEncabezado.setBounds(28, 18, 1100, 76);
 
         pnlInformacion.setBackground(new java.awt.Color(255, 255, 255));
         pnlInformacion.setLayout(null);
@@ -871,11 +853,29 @@ public class ClientesPanel extends javax.swing.JPanel {
         pnlLista.add(lblCantidad);
         lblCantidad.setBounds(18, 312, 320, 24);
 
+        pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
+        pnlEncabezado.setLayout(null);
+
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
+        lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
+        lblTitulo.setText("Gestión de Clientes");
+        pnlEncabezado.add(lblTitulo);
+        lblTitulo.setBounds(0, 4, 390, 40);
+
+        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
+        lblSubtitulo.setText("Administra la información de tus clientes.");
+        pnlEncabezado.add(lblSubtitulo);
+        lblSubtitulo.setBounds(0, 46, 520, 24);
+
+        pnlLista.add(pnlEncabezado);
+        pnlEncabezado.setBounds(520, -50, 1100, 76);
+
         add(pnlLista);
         pnlLista.setBounds(28, 390, 1094, 344);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizar;
     private javax.swing.JButton btnCambiarEstado;
     private javax.swing.JButton btnGuardar;
@@ -909,5 +909,5 @@ public class ClientesPanel extends javax.swing.JPanel {
     private javax.swing.JTextField txtIdentidad;
     private javax.swing.JTextField txtNombre;
     private javax.swing.JTextField txtTelefono;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

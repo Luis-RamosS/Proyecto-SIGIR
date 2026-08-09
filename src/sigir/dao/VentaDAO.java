@@ -124,7 +124,7 @@ public class VentaDAO {
                    v.id_usuario,u.nombre_completo AS nombre_usuario,
                    v.id_usuario_autoriza_descuento,v.numero_factura,v.fecha_venta,
                    v.tipo_venta,v.metodo_pago,v.subtotal,v.descuento,v.tipo_descuento,
-                   v.motivo_descuento,v.total,v.monto_pagado,v.cambio,v.estado,v.observaciones
+                   v.motivo_descuento,v.total,v.monto_pagado,v.cambio,v.estado,v.observaciones,v.comprobante_transferencia
             FROM dbo.ventas v
             INNER JOIN dbo.clientes c ON c.id_cliente=v.id_cliente
             INNER JOIN dbo.usuarios u ON u.id_usuario=v.id_usuario
@@ -144,13 +144,51 @@ public class VentaDAO {
         return lista;
     }
 
+    public ResumenVentasDiarias obtenerResumenDiario(LocalDate fecha) throws SQLException {
+        LocalDate dia = fecha == null ? LocalDate.now() : fecha;
+        String sql = """
+            SELECT
+                COALESCE(SUM(CASE WHEN metodo_pago='TRANSFERENCIA' THEN total ELSE 0 END),0) AS transferencias,
+                COALESCE(SUM(CASE WHEN metodo_pago='CREDITO' THEN total ELSE 0 END),0) AS creditos,
+                COALESCE(SUM(CASE WHEN metodo_pago='TARJETA' THEN total ELSE 0 END),0) AS tarjetas,
+                COALESCE(SUM(total),0) AS total_ventas
+            FROM
+            (
+                SELECT metodo_pago,total
+                FROM dbo.ventas
+                WHERE estado <> 'ANULADA'
+                  AND fecha_venta >= ?
+                  AND fecha_venta < DATEADD(DAY,1,?)
+                UNION ALL
+                SELECT metodo_pago,total
+                FROM dbo.ventas_rapidas
+                WHERE fecha_registro >= ?
+                  AND fecha_registro < DATEADD(DAY,1,?)
+            ) x;
+            """;
+        ResumenVentasDiarias resumen = new ResumenVentasDiarias();
+        try (Connection cn=ConexionBD.obtenerConexion(); PreparedStatement ps=cn.prepareStatement(sql)) {
+            Date d=Date.valueOf(dia);
+            ps.setDate(1,d); ps.setDate(2,d); ps.setDate(3,d); ps.setDate(4,d);
+            try(ResultSet rs=ps.executeQuery()) {
+                if(rs.next()) {
+                    resumen.setTransferencias(rs.getBigDecimal("transferencias"));
+                    resumen.setCreditos(rs.getBigDecimal("creditos"));
+                    resumen.setTarjetas(rs.getBigDecimal("tarjetas"));
+                    resumen.setTotalVentas(rs.getBigDecimal("total_ventas"));
+                }
+            }
+        }
+        return resumen;
+    }
+
     public Venta obtenerVentaCompleta(int idVenta) throws SQLException {
         String cab="""
             SELECT v.id_venta,v.id_cliente,c.nombre_completo AS nombre_cliente,
                    v.id_usuario,u.nombre_completo AS nombre_usuario,
                    v.id_usuario_autoriza_descuento,v.numero_factura,v.fecha_venta,
                    v.tipo_venta,v.metodo_pago,v.subtotal,v.descuento,v.tipo_descuento,
-                   v.motivo_descuento,v.total,v.monto_pagado,v.cambio,v.estado,v.observaciones
+                   v.motivo_descuento,v.total,v.monto_pagado,v.cambio,v.estado,v.observaciones,v.comprobante_transferencia
             FROM dbo.ventas v
             INNER JOIN dbo.clientes c ON c.id_cliente=v.id_cliente
             INNER JOIN dbo.usuarios u ON u.id_usuario=v.id_usuario
@@ -204,15 +242,15 @@ public class VentaDAO {
 
     private int insertarVenta(Connection cn,Venta v)throws SQLException{
         String sql="""
-            INSERT INTO dbo.ventas(id_cliente,id_usuario,id_usuario_autoriza_descuento,numero_factura,fecha_venta,tipo_venta,metodo_pago,subtotal,descuento,tipo_descuento,motivo_descuento,total,monto_pagado,cambio,estado,observaciones)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+            INSERT INTO dbo.ventas(id_cliente,id_usuario,id_usuario_autoriza_descuento,numero_factura,fecha_venta,tipo_venta,metodo_pago,subtotal,descuento,tipo_descuento,motivo_descuento,total,monto_pagado,cambio,estado,observaciones,comprobante_transferencia)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
             """;
         try(PreparedStatement ps=cn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){
             ps.setInt(1,v.getIdCliente()); ps.setInt(2,v.getIdUsuario());
             if(v.getIdUsuarioAutorizaDescuento()==null) ps.setNull(3,Types.INTEGER); else ps.setInt(3,v.getIdUsuarioAutorizaDescuento());
             ps.setString(4,v.getNumeroFactura()); ps.setTimestamp(5,Timestamp.valueOf(v.getFechaVenta())); ps.setString(6,v.getTipoVenta()); ps.setString(7,v.getMetodoPago());
             ps.setBigDecimal(8,v.getSubtotal()); ps.setBigDecimal(9,v.getDescuento()); setNulo(ps,10,v.getTipoDescuento()); setNulo(ps,11,v.getMotivoDescuento());
-            ps.setBigDecimal(12,v.getTotal()); ps.setBigDecimal(13,v.getMontoPagado()); ps.setBigDecimal(14,v.getCambio()); ps.setString(15,v.getEstado()); setNulo(ps,16,v.getObservaciones());
+            ps.setBigDecimal(12,v.getTotal()); ps.setBigDecimal(13,v.getMontoPagado()); ps.setBigDecimal(14,v.getCambio()); ps.setString(15,v.getEstado()); setNulo(ps,16,v.getObservaciones()); setNulo(ps,17,v.getComprobanteTransferencia());
             ps.executeUpdate(); try(ResultSet rs=ps.getGeneratedKeys()){ if(rs.next()) return rs.getInt(1); }
         }
         throw new SQLException("SQL Server no devolvió el id de la venta.");
@@ -297,7 +335,7 @@ public class VentaDAO {
     }
 
     private Venta mapearVenta(ResultSet rs)throws SQLException{
-        Venta v=new Venta(); v.setIdVenta(rs.getInt("id_venta")); v.setIdCliente(rs.getInt("id_cliente")); v.setNombreCliente(rs.getString("nombre_cliente")); v.setIdUsuario(rs.getInt("id_usuario")); v.setNombreUsuario(rs.getString("nombre_usuario")); int a=rs.getInt("id_usuario_autoriza_descuento"); if(!rs.wasNull())v.setIdUsuarioAutorizaDescuento(a); v.setNumeroFactura(rs.getString("numero_factura")); Timestamp f=rs.getTimestamp("fecha_venta"); if(f!=null)v.setFechaVenta(f.toLocalDateTime()); v.setTipoVenta(rs.getString("tipo_venta")); v.setMetodoPago(rs.getString("metodo_pago")); v.setSubtotal(rs.getBigDecimal("subtotal")); v.setDescuento(rs.getBigDecimal("descuento")); v.setTipoDescuento(rs.getString("tipo_descuento")); v.setMotivoDescuento(rs.getString("motivo_descuento")); v.setTotal(rs.getBigDecimal("total")); v.setMontoPagado(rs.getBigDecimal("monto_pagado")); v.setCambio(rs.getBigDecimal("cambio")); v.setEstado(rs.getString("estado")); v.setObservaciones(rs.getString("observaciones")); return v;
+        Venta v=new Venta(); v.setIdVenta(rs.getInt("id_venta")); v.setIdCliente(rs.getInt("id_cliente")); v.setNombreCliente(rs.getString("nombre_cliente")); v.setIdUsuario(rs.getInt("id_usuario")); v.setNombreUsuario(rs.getString("nombre_usuario")); int a=rs.getInt("id_usuario_autoriza_descuento"); if(!rs.wasNull())v.setIdUsuarioAutorizaDescuento(a); v.setNumeroFactura(rs.getString("numero_factura")); Timestamp f=rs.getTimestamp("fecha_venta"); if(f!=null)v.setFechaVenta(f.toLocalDateTime()); v.setTipoVenta(rs.getString("tipo_venta")); v.setMetodoPago(rs.getString("metodo_pago")); v.setSubtotal(rs.getBigDecimal("subtotal")); v.setDescuento(rs.getBigDecimal("descuento")); v.setTipoDescuento(rs.getString("tipo_descuento")); v.setMotivoDescuento(rs.getString("motivo_descuento")); v.setTotal(rs.getBigDecimal("total")); v.setMontoPagado(rs.getBigDecimal("monto_pagado")); v.setCambio(rs.getBigDecimal("cambio")); v.setEstado(rs.getString("estado")); v.setObservaciones(rs.getString("observaciones")); v.setComprobanteTransferencia(rs.getString("comprobante_transferencia")); return v;
     }
 
     private void setFecha(PreparedStatement ps,int p1,int p2,LocalDate f)throws SQLException{ if(f==null){ps.setNull(p1,Types.DATE);ps.setNull(p2,Types.DATE);}else{Date d=Date.valueOf(f);ps.setDate(p1,d);ps.setDate(p2,d);} }

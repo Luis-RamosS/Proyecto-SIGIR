@@ -37,6 +37,8 @@ import sigir.modelo.Producto;
 import sigir.modelo.Proveedor;
 import sigir.util.FiltroTiempoReal;
 import sigir.util.Sesion;
+import sigir.util.CampoSeleccionUtil;
+import sigir.util.SelectorFechaUtil;
 import sigir.vista.dialogos.BusquedaProductoCompraDialog;
 
 public class ComprasPanel extends javax.swing.JPanel {
@@ -161,6 +163,10 @@ public class ComprasPanel extends javax.swing.JPanel {
         tblHistorial.setFillsViewportHeight(true);
 
         tabsCompras.setSelectedIndex(0);
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(txtBuscarProveedor, txtBuscarHistorial);
+        SelectorFechaUtil.instalar(txtFechaCompra, false);
+        SelectorFechaUtil.instalar(txtFechaDesde, true);
+        SelectorFechaUtil.instalar(txtFechaHasta, true);
     }
 
 
@@ -1134,7 +1140,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         pnlEncabezado = new javax.swing.JPanel();
@@ -1512,9 +1518,9 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         add(tabsCompras);
         tabsCompras.setBounds(28, 88, 1070, 680);
-    }// </editor-fold>                        
+    }// </editor-fold>//GEN-END:initComponents
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizarHistorial;
     private javax.swing.JButton btnAgregarProducto;
     private javax.swing.JButton btnAnularCompra;
@@ -1577,5 +1583,5 @@ public class ComprasPanel extends javax.swing.JPanel {
     private javax.swing.JTextArea txtObservaciones;
     private javax.swing.JTextField txtStockProducto;
     private javax.swing.JTextField txtUsuario;
-    // End of variables declaration                   
+    // End of variables declaration//GEN-END:variables
 }

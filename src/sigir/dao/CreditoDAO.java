@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import sigir.conexion.ConexionBD;
@@ -216,11 +217,12 @@ public class CreditoDAO {
             BigDecimal monto,
             String metodoPago,
             String referencia,
-            String observaciones) throws SQLException {
+            String observaciones,
+            LocalDate fechaAbono) throws SQLException {
 
         try (Connection cn = ConexionBD.obtenerConexion();
              CallableStatement cs = cn.prepareCall(
-                     "{call dbo.sp_registrar_abono_credito(?,?,?,?,?,?)}"
+                     "{call dbo.sp_registrar_abono_credito(?,?,?,?,?,?,?)}"
              )) {
 
             cs.setInt(1, idCredito);
@@ -238,6 +240,12 @@ public class CreditoDAO {
                 cs.setNull(6, Types.NVARCHAR);
             } else {
                 cs.setString(6, observaciones.trim());
+            }
+
+            if (fechaAbono == null) {
+                cs.setNull(7, Types.TIMESTAMP);
+            } else {
+                cs.setTimestamp(7, Timestamp.valueOf(fechaAbono.atTime(12, 0)));
             }
 
             cs.execute();

@@ -894,8 +894,8 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlDetalle.add(lblDescripcion);
         lblDescripcion.setBounds(18, 338, 150, 18);
 
-        txtDescripcion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtDescripcion.setColumns(20);
+        txtDescripcion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtDescripcion.setLineWrap(true);
         txtDescripcion.setRows(5);
         txtDescripcion.setWrapStyleWord(true);
