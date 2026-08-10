@@ -163,7 +163,11 @@ public class ComprasPanel extends javax.swing.JPanel {
         tblHistorial.setFillsViewportHeight(true);
 
         tabsCompras.setSelectedIndex(0);
-        CampoSeleccionUtil.seleccionarTodoAlEnfocar(txtBuscarProveedor, txtBuscarHistorial);
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(
+                txtBuscarProveedor,
+                txtBuscarHistorial,
+                txtCostoUnitario
+        );
         SelectorFechaUtil.instalar(txtFechaCompra, false);
         SelectorFechaUtil.instalar(txtFechaDesde, true);
         SelectorFechaUtil.instalar(txtFechaHasta, true);
@@ -408,6 +412,28 @@ public class ComprasPanel extends javax.swing.JPanel {
                 controlador.buscarCompras();
             }
         });
+    }
+
+    public void prepararNuevaCompraParaProveedor(
+            Proveedor proveedor) {
+
+        if (proveedor == null
+                || proveedor.getIdProveedor() <= 0) {
+
+            return;
+        }
+
+        controlador.nuevaCompra();
+
+        proveedorSeleccionado =
+                proveedor;
+
+        buscadorProveedores.seleccionar(
+                proveedor
+        );
+
+        tabsCompras.setSelectedIndex(0);
+        btnBuscarProducto.requestFocusInWindow();
     }
 
     public void cargarProveedores(

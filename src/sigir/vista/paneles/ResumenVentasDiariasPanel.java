@@ -43,9 +43,13 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
     }
 
     public void mostrarResumen(ResumenVentasDiarias r) {
+        lblEfectivoValor.setText(formatear(r.getEfectivo()));
         lblTransferenciasValor.setText(formatear(r.getTransferencias()));
         lblCreditosValor.setText(formatear(r.getCreditos()));
         lblTarjetasValor.setText(formatear(r.getTarjetas()));
+        lblVentasRapidasValor.setText(
+                formatear(r.getVentasRapidas())
+        );
         lblTotalValor.setText(formatear(r.getTotalVentas()));
     }
 
@@ -60,7 +64,9 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
 
     private void aplicarEstilos() {
         Color borde = new Color(220, 227, 236);
-        for (javax.swing.JPanel p : new javax.swing.JPanel[]{pnlTransferencias, pnlCreditos, pnlTarjetas, pnlTotal}) {
+        for (javax.swing.JPanel p : new javax.swing.JPanel[]{
+                pnlEfectivo, pnlTransferencias, pnlCreditos,
+                pnlTarjetas, pnlVentasRapidas, pnlTotal}) {
             p.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(borde),
                     BorderFactory.createEmptyBorder(8, 8, 8, 8)
@@ -81,6 +87,9 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
         lblFecha = new javax.swing.JLabel();
         txtFecha = new javax.swing.JTextField();
         btnActualizar = new javax.swing.JButton();
+        pnlEfectivo = new javax.swing.JPanel();
+        lblEfectivoTitulo = new javax.swing.JLabel();
+        lblEfectivoValor = new javax.swing.JLabel();
         pnlTransferencias = new javax.swing.JPanel();
         lblTransferenciasTitulo = new javax.swing.JLabel();
         lblTransferenciasValor = new javax.swing.JLabel();
@@ -90,6 +99,9 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
         pnlTarjetas = new javax.swing.JPanel();
         lblTarjetasTitulo = new javax.swing.JLabel();
         lblTarjetasValor = new javax.swing.JLabel();
+        pnlVentasRapidas = new javax.swing.JPanel();
+        lblVentasRapidasTitulo = new javax.swing.JLabel();
+        lblVentasRapidasValor = new javax.swing.JLabel();
         pnlTotal = new javax.swing.JPanel();
         lblTotalTitulo = new javax.swing.JLabel();
         lblTotalValor = new javax.swing.JLabel();
@@ -104,7 +116,7 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
         add(lblTitulo); lblTitulo.setBounds(24, 24, 420, 34);
 
         lblSubtitulo.setForeground(new Color(98,124,159));
-        lblSubtitulo.setText("Totales registrados para la fecha seleccionada.");
+        lblSubtitulo.setText("Ingresos realmente recibidos para la fecha seleccionada.");
         add(lblSubtitulo); lblSubtitulo.setBounds(24, 58, 450, 22);
 
         lblFecha.setText("Fecha");
@@ -113,48 +125,81 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
         btnActualizar.setText("Actualizar");
         add(btnActualizar); btnActualizar.setBounds(810, 48, 130, 34);
 
-        javax.swing.JPanel[] paneles = {pnlTransferencias,pnlCreditos,pnlTarjetas,pnlTotal};
+        javax.swing.JPanel[] paneles = {
+            pnlEfectivo,pnlTransferencias,pnlCreditos,
+            pnlTarjetas,pnlVentasRapidas,pnlTotal
+        };
         for(javax.swing.JPanel p:paneles){p.setBackground(Color.WHITE);p.setLayout(null);add(p);}
 
-        lblTransferenciasTitulo.setText("Ventas por transferencia");
-        lblTransferenciasValor.setFont(new Font("Segoe UI",Font.BOLD,26));
+        lblEfectivoTitulo.setText("Ventas en efectivo");
+        lblEfectivoValor.setFont(new Font("Segoe UI",Font.BOLD,22));
+        lblEfectivoValor.setForeground(new Color(24,50,87));
+        lblEfectivoValor.setText("L 0.00");
+        pnlEfectivo.add(lblEfectivoTitulo);
+        lblEfectivoTitulo.setBounds(14,18,150,20);
+        pnlEfectivo.add(lblEfectivoValor);
+        lblEfectivoValor.setBounds(14,48,150,38);
+        pnlEfectivo.setBounds(24,120,160,105);
+
+        lblTransferenciasTitulo.setText("Transferencias");
+        lblTransferenciasValor.setFont(new Font("Segoe UI",Font.BOLD,22));
         lblTransferenciasValor.setForeground(new Color(24,50,87));
         lblTransferenciasValor.setText("L 0.00");
-        pnlTransferencias.add(lblTransferenciasTitulo);lblTransferenciasTitulo.setBounds(18,18,220,20);
-        pnlTransferencias.add(lblTransferenciasValor);lblTransferenciasValor.setBounds(18,48,220,38);
-        pnlTransferencias.setBounds(24,120,240,105);
+        pnlTransferencias.add(lblTransferenciasTitulo);
+        lblTransferenciasTitulo.setBounds(14,18,150,20);
+        pnlTransferencias.add(lblTransferenciasValor);
+        lblTransferenciasValor.setBounds(14,48,150,38);
+        pnlTransferencias.setBounds(194,120,160,105);
 
-        lblCreditosTitulo.setText("Ventas a crédito");
-        lblCreditosValor.setFont(new Font("Segoe UI",Font.BOLD,26));
+        lblCreditosTitulo.setText("Cobros de crédito");
+        lblCreditosValor.setFont(new Font("Segoe UI",Font.BOLD,22));
         lblCreditosValor.setForeground(new Color(24,50,87));
         lblCreditosValor.setText("L 0.00");
-        pnlCreditos.add(lblCreditosTitulo);lblCreditosTitulo.setBounds(18,18,220,20);
-        pnlCreditos.add(lblCreditosValor);lblCreditosValor.setBounds(18,48,220,38);
-        pnlCreditos.setBounds(278,120,240,105);
+        pnlCreditos.add(lblCreditosTitulo);
+        lblCreditosTitulo.setBounds(14,18,150,20);
+        pnlCreditos.add(lblCreditosValor);
+        lblCreditosValor.setBounds(14,48,150,38);
+        pnlCreditos.setBounds(364,120,160,105);
 
         lblTarjetasTitulo.setText("Ventas por tarjeta");
-        lblTarjetasValor.setFont(new Font("Segoe UI",Font.BOLD,26));
+        lblTarjetasValor.setFont(new Font("Segoe UI",Font.BOLD,22));
         lblTarjetasValor.setForeground(new Color(24,50,87));
         lblTarjetasValor.setText("L 0.00");
-        pnlTarjetas.add(lblTarjetasTitulo);lblTarjetasTitulo.setBounds(18,18,220,20);
-        pnlTarjetas.add(lblTarjetasValor);lblTarjetasValor.setBounds(18,48,220,38);
-        pnlTarjetas.setBounds(532,120,240,105);
+        pnlTarjetas.add(lblTarjetasTitulo);
+        lblTarjetasTitulo.setBounds(14,18,150,20);
+        pnlTarjetas.add(lblTarjetasValor);
+        lblTarjetasValor.setBounds(14,48,150,38);
+        pnlTarjetas.setBounds(534,120,160,105);
 
-        lblTotalTitulo.setText("Total de ventas realizadas");
-        lblTotalValor.setFont(new Font("Segoe UI",Font.BOLD,26));
+        lblVentasRapidasTitulo.setText("Ventas rápidas");
+        lblVentasRapidasValor.setFont(new Font("Segoe UI",Font.BOLD,22));
+        lblVentasRapidasValor.setForeground(new Color(24,50,87));
+        lblVentasRapidasValor.setText("L 0.00");
+        pnlVentasRapidas.add(lblVentasRapidasTitulo);
+        lblVentasRapidasTitulo.setBounds(14,18,150,20);
+        pnlVentasRapidas.add(lblVentasRapidasValor);
+        lblVentasRapidasValor.setBounds(14,48,150,38);
+        pnlVentasRapidas.setBounds(704,120,160,105);
+
+        lblTotalTitulo.setText("Total ingresado");
+        lblTotalValor.setFont(new Font("Segoe UI",Font.BOLD,22));
         lblTotalValor.setForeground(new Color(24,50,87));
         lblTotalValor.setText("L 0.00");
-        pnlTotal.add(lblTotalTitulo);lblTotalTitulo.setBounds(18,18,220,20);
-        pnlTotal.add(lblTotalValor);lblTotalValor.setBounds(18,48,220,38);
-        pnlTotal.setBounds(786,120,240,105);
+        pnlTotal.add(lblTotalTitulo);
+        lblTotalTitulo.setBounds(14,18,150,20);
+        pnlTotal.add(lblTotalValor);
+        lblTotalValor.setBounds(14,48,150,38);
+        pnlTotal.setBounds(874,120,160,105);
 
         lblNota.setForeground(new Color(79,109,151));
-        lblNota.setText("Las ventas rápidas cuentan en el día en que fueron registradas en SIGIR, aunque hayan ocurrido fuera de horario el día anterior.");
+        lblNota.setText("El cierre diario cuenta solo dinero recibido: los créditos suman abonos, no el valor total pendiente. Las ventas rápidas cuentan al registrarse.");
         add(lblNota);lblNota.setBounds(24,255,980,24);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnActualizar;
+    private javax.swing.JLabel lblEfectivoTitulo;
+    private javax.swing.JLabel lblEfectivoValor;
     private javax.swing.JLabel lblCreditosTitulo;
     private javax.swing.JLabel lblCreditosValor;
     private javax.swing.JLabel lblFecha;
@@ -167,10 +212,14 @@ public class ResumenVentasDiariasPanel extends javax.swing.JPanel {
     private javax.swing.JLabel lblTotalValor;
     private javax.swing.JLabel lblTransferenciasTitulo;
     private javax.swing.JLabel lblTransferenciasValor;
+    private javax.swing.JLabel lblVentasRapidasTitulo;
+    private javax.swing.JLabel lblVentasRapidasValor;
     private javax.swing.JPanel pnlCreditos;
+    private javax.swing.JPanel pnlEfectivo;
     private javax.swing.JPanel pnlTarjetas;
     private javax.swing.JPanel pnlTotal;
     private javax.swing.JPanel pnlTransferencias;
+    private javax.swing.JPanel pnlVentasRapidas;
     private javax.swing.JTextField txtFecha;
     // End of variables declaration//GEN-END:variables
 }

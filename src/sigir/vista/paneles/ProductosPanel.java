@@ -19,18 +19,17 @@ import javax.swing.table.JTableHeader;
 import sigir.controlador.ProductoControlador;
 import sigir.modelo.Categoria;
 import sigir.modelo.Producto;
-import javax.swing.Timer;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
+import sigir.util.CampoSeleccionUtil;
 
 public class ProductosPanel extends javax.swing.JPanel {
 
     private final ProductoControlador controlador;
+    private boolean iniciado;
+
     private final NumberFormat formatoMoneda =
             NumberFormat.getCurrencyInstance(
                     new Locale("es", "HN")
             );
-    private boolean iniciado;
 
     public ProductosPanel() {
         initComponents();
@@ -39,64 +38,22 @@ public class ProductosPanel extends javax.swing.JPanel {
         configurarEventos();
 
         controlador = new ProductoControlador(this);
-        
-        configurarEventos();
-        configurarBusquedaTiempoReal();
-        
-        
     }
 
-
     public void activar() {
-
         if (!iniciado) {
             iniciado = true;
-            controlador.iniciarAsync();
+            controlador.iniciar();
             return;
         }
 
-        controlador.recargarSiNecesario();
+        controlador.recargar();
     }
 
     public void recargar() {
-        controlador.recargarAsync();
+        controlador.recargar();
     }
 
-    private void configurarBusquedaTiempoReal() {
-
-    Timer temporizadorBusqueda =
-            new Timer(200, e -> controlador.buscar());
-
-    temporizadorBusqueda.setRepeats(false);
-
-    txtBuscar.getDocument().addDocumentListener(
-            new DocumentListener() {
-
-        private void actualizarBusqueda() {
-
-            /*
-             * Reinicia el temporizador cada vez que se escribe
-             * o elimina una letra.
-             */
-            temporizadorBusqueda.restart();
-        }
-
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            actualizarBusqueda();
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            actualizarBusqueda();
-        }
-
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            actualizarBusqueda();
-        }
-    });
-}
     private void configurarComponentes() {
         formatoMoneda.setMinimumFractionDigits(2);
         formatoMoneda.setMaximumFractionDigits(2);
@@ -113,6 +70,11 @@ public class ProductosPanel extends javax.swing.JPanel {
         cmbEstado.setModel(new DefaultComboBoxModel<>(
                 new String[]{"ACTIVO", "INACTIVO"}
         ));
+
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(
+                txtPrecioCompra,
+                txtPrecioVenta
+        );
     }
 
     private void aplicarEstilos() {
@@ -155,7 +117,7 @@ public class ProductosPanel extends javax.swing.JPanel {
         );
 
         javax.swing.JButton[] botones = {
-             btnNuevo, btnGuardar, btnDesactivar
+            btnBuscar, btnNuevo, btnGuardar, btnDesactivar
         };
 
         for (javax.swing.JButton boton : botones) {
@@ -167,7 +129,11 @@ public class ProductosPanel extends javax.swing.JPanel {
             boton.setFocusPainted(false);
         }
 
-        
+        btnBuscar.setBackground(Color.WHITE);
+        btnBuscar.setForeground(texto);
+        btnBuscar.setBorder(
+                BorderFactory.createLineBorder(borde)
+        );
 
         btnNuevo.setBackground(azul);
         btnNuevo.setForeground(Color.WHITE);
@@ -224,14 +190,14 @@ public class ProductosPanel extends javax.swing.JPanel {
     }
 
     private void configurarEventos() {
-        
+        btnBuscar.addActionListener(e -> controlador.buscar());
         btnNuevo.addActionListener(e -> controlador.nuevo());
         btnGuardar.addActionListener(e -> controlador.guardar());
         btnDesactivar.addActionListener(
                 e -> controlador.desactivar()
         );
 
-        
+        txtBuscar.addActionListener(e -> controlador.buscar());
 
         cmbFiltroCategoria.addActionListener(e -> {
             if (cmbFiltroCategoria.getItemCount() > 0) {
@@ -245,6 +211,38 @@ public class ProductosPanel extends javax.swing.JPanel {
                         controlador.seleccionarFila();
                     }
                 });
+    }
+
+    public String firmaFormulario() {
+        Categoria categoria =
+                getCategoriaFormulario();
+
+        return String.join(
+                "~|~",
+                txtCodigo.getText(),
+                txtNombre.getText(),
+                String.valueOf(
+                        categoria == null
+                                ? 0
+                                : categoria.getIdCategoria()
+                ),
+                txtMarca.getText(),
+                txtModelo.getText(),
+                txtPrecioCompra.getText(),
+                txtPrecioVenta.getText(),
+                txtStockMinimo.getText(),
+                txtDescripcion.getText(),
+                String.valueOf(
+                        chkNumeroSerie.isSelected()
+                ),
+                String.valueOf(
+                        cmbEstado.getSelectedItem()
+                )
+        );
+    }
+
+    public void limpiarSeleccionTabla() {
+        tblProductos.clearSelection();
     }
 
     public String getTextoBusqueda() {
@@ -683,6 +681,7 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlFiltros = new javax.swing.JPanel();
         txtBuscar = new javax.swing.JTextField();
         cmbFiltroCategoria = new javax.swing.JComboBox<>();
+        btnBuscar = new javax.swing.JButton();
         btnNuevo = new javax.swing.JButton();
         pnlTabla = new javax.swing.JPanel();
         scrollProductos = new javax.swing.JScrollPane();
@@ -725,13 +724,13 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
         lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
         lblTitulo.setText("Gestión de Productos");
         pnlEncabezado.add(lblTitulo);
         lblTitulo.setBounds(0, 4, 390, 40);
 
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14));
         lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
         lblSubtitulo.setText("Administra el catálogo de productos de tu inventario.");
         pnlEncabezado.add(lblSubtitulo);
@@ -743,20 +742,25 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlFiltros.setBackground(new java.awt.Color(255, 255, 255));
         pnlFiltros.setLayout(null);
 
-        txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        txtBuscar.setFont(new java.awt.Font("Segoe UI", 0, 14));
         txtBuscar.setForeground(new java.awt.Color(36, 64, 101));
         txtBuscar.setToolTipText("Buscar por código, nombre, marca o modelo");
         pnlFiltros.add(txtBuscar);
-        txtBuscar.setBounds(20, 10, 380, 42);
+        txtBuscar.setBounds(14, 14, 285, 42);
 
-        cmbFiltroCategoria.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        cmbFiltroCategoria.setFont(new java.awt.Font("Segoe UI", 0, 13));
         pnlFiltros.add(cmbFiltroCategoria);
-        cmbFiltroCategoria.setBounds(410, 10, 190, 42);
+        cmbFiltroCategoria.setBounds(309, 14, 190, 42);
 
-        btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnBuscar.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        btnBuscar.setText("Buscar");
+        pnlFiltros.add(btnBuscar);
+        btnBuscar.setBounds(509, 14, 95, 42);
+
+        btnNuevo.setFont(new java.awt.Font("Segoe UI", 1, 13));
         btnNuevo.setText("+ Nuevo producto");
         pnlFiltros.add(btnNuevo);
-        btnNuevo.setBounds(620, 10, 150, 42);
+        btnNuevo.setBounds(614, 14, 150, 42);
 
         add(pnlFiltros);
         pnlFiltros.setBounds(28, 98, 780, 70);
@@ -764,12 +768,36 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlTabla.setBackground(new java.awt.Color(255, 255, 255));
         pnlTabla.setLayout(null);
 
-        tblProductos.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        tblProductos.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        tblProductos.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "ID", "Código", "Producto", "Categoría", "Marca", "Stock", "P. venta", "Estado"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
         scrollProductos.setViewportView(tblProductos);
 
         pnlTabla.add(scrollProductos);
         scrollProductos.setBounds(0, 0, 780, 476);
 
+        lblCantidad.setFont(new java.awt.Font("Segoe UI", 0, 12));
         lblCantidad.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidad.setText("Mostrando 0 productos");
         pnlTabla.add(lblCantidad);
@@ -781,121 +809,122 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlDetalle.setBackground(new java.awt.Color(255, 255, 255));
         pnlDetalle.setLayout(null);
 
-        lblTituloDetalle.setFont(new java.awt.Font("Segoe UI", 1, 17)); // NOI18N
+        lblTituloDetalle.setFont(new java.awt.Font("Segoe UI", 1, 17));
         lblTituloDetalle.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloDetalle.setText("Nuevo producto");
         pnlDetalle.add(lblTituloDetalle);
         lblTituloDetalle.setBounds(18, 12, 260, 28);
 
-        lblCodigo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblCodigo.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblCodigo.setForeground(new java.awt.Color(38, 64, 99));
         lblCodigo.setText("Código");
         pnlDetalle.add(lblCodigo);
         lblCodigo.setBounds(18, 48, 120, 18);
 
-        txtCodigo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtCodigo.setFont(new java.awt.Font("Segoe UI", 0, 13));
         pnlDetalle.add(txtCodigo);
         txtCodigo.setBounds(18, 69, 150, 36);
 
-        lblNombre.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblNombre.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblNombre.setForeground(new java.awt.Color(38, 64, 99));
         lblNombre.setText("Nombre del producto");
         pnlDetalle.add(lblNombre);
         lblNombre.setBounds(178, 48, 170, 18);
 
-        txtNombre.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtNombre.setFont(new java.awt.Font("Segoe UI", 0, 13));
         pnlDetalle.add(txtNombre);
         txtNombre.setBounds(178, 69, 308, 36);
 
-        lblCategoria.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblCategoria.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblCategoria.setForeground(new java.awt.Color(38, 64, 99));
         lblCategoria.setText("Categoría");
         pnlDetalle.add(lblCategoria);
         lblCategoria.setBounds(18, 112, 150, 18);
 
-        cmbCategoria.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        cmbCategoria.setFont(new java.awt.Font("Segoe UI", 0, 13));
         pnlDetalle.add(cmbCategoria);
         cmbCategoria.setBounds(18, 133, 468, 36);
 
-        lblMarca.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblMarca.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblMarca.setForeground(new java.awt.Color(38, 64, 99));
         lblMarca.setText("Marca");
         pnlDetalle.add(lblMarca);
         lblMarca.setBounds(18, 176, 150, 18);
 
-        txtMarca.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtMarca.setFont(new java.awt.Font("Segoe UI", 0, 13));
         pnlDetalle.add(txtMarca);
         txtMarca.setBounds(18, 197, 225, 36);
 
-        lblModelo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblModelo.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblModelo.setForeground(new java.awt.Color(38, 64, 99));
         lblModelo.setText("Modelo");
         pnlDetalle.add(lblModelo);
         lblModelo.setBounds(253, 176, 150, 18);
 
-        txtModelo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtModelo.setFont(new java.awt.Font("Segoe UI", 0, 13));
         pnlDetalle.add(txtModelo);
         txtModelo.setBounds(253, 197, 233, 36);
 
-        lblPrecioCompra.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblPrecioCompra.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblPrecioCompra.setForeground(new java.awt.Color(38, 64, 99));
         lblPrecioCompra.setText("Precio compra");
         pnlDetalle.add(lblPrecioCompra);
         lblPrecioCompra.setBounds(18, 240, 150, 18);
 
-        txtPrecioCompra.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtPrecioCompra.setFont(new java.awt.Font("Segoe UI", 0, 13));
         txtPrecioCompra.setText("0.00");
         pnlDetalle.add(txtPrecioCompra);
         txtPrecioCompra.setBounds(18, 261, 150, 36);
 
-        lblPrecioVenta.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblPrecioVenta.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblPrecioVenta.setForeground(new java.awt.Color(38, 64, 99));
         lblPrecioVenta.setText("Precio venta");
         pnlDetalle.add(lblPrecioVenta);
         lblPrecioVenta.setBounds(178, 240, 150, 18);
 
-        txtPrecioVenta.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtPrecioVenta.setFont(new java.awt.Font("Segoe UI", 0, 13));
         txtPrecioVenta.setText("0.00");
         pnlDetalle.add(txtPrecioVenta);
         txtPrecioVenta.setBounds(178, 261, 150, 36);
 
-        lblStockActual.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblStockActual.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblStockActual.setForeground(new java.awt.Color(38, 64, 99));
         lblStockActual.setText("Stock actual");
         pnlDetalle.add(lblStockActual);
         lblStockActual.setBounds(338, 240, 110, 18);
 
         txtStockActual.setBackground(new java.awt.Color(244, 247, 251));
-        txtStockActual.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtStockActual.setFont(new java.awt.Font("Segoe UI", 0, 13));
         txtStockActual.setText("0");
         pnlDetalle.add(txtStockActual);
         txtStockActual.setBounds(338, 261, 68, 36);
 
-        lblStockMinimo.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblStockMinimo.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblStockMinimo.setForeground(new java.awt.Color(38, 64, 99));
         lblStockMinimo.setText("Stock mín.");
         pnlDetalle.add(lblStockMinimo);
         lblStockMinimo.setBounds(416, 240, 70, 18);
 
-        txtStockMinimo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtStockMinimo.setFont(new java.awt.Font("Segoe UI", 0, 13));
         txtStockMinimo.setText("1");
         pnlDetalle.add(txtStockMinimo);
         txtStockMinimo.setBounds(416, 261, 70, 36);
 
         chkNumeroSerie.setBackground(new java.awt.Color(255, 255, 255));
+        chkNumeroSerie.setFont(new java.awt.Font("Segoe UI", 0, 12));
         chkNumeroSerie.setForeground(new java.awt.Color(38, 64, 99));
         chkNumeroSerie.setText("El producto maneja número de serie");
         pnlDetalle.add(chkNumeroSerie);
         chkNumeroSerie.setBounds(18, 306, 280, 26);
 
-        lblDescripcion.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblDescripcion.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblDescripcion.setForeground(new java.awt.Color(38, 64, 99));
         lblDescripcion.setText("Descripción");
         pnlDetalle.add(lblDescripcion);
         lblDescripcion.setBounds(18, 338, 150, 18);
 
         txtDescripcion.setColumns(20);
-        txtDescripcion.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtDescripcion.setFont(new java.awt.Font("Segoe UI", 0, 13));
         txtDescripcion.setLineWrap(true);
         txtDescripcion.setRows(5);
         txtDescripcion.setWrapStyleWord(true);
@@ -904,22 +933,23 @@ public class ProductosPanel extends javax.swing.JPanel {
         pnlDetalle.add(scrollDescripcion);
         scrollDescripcion.setBounds(18, 359, 468, 88);
 
-        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblEstado.setFont(new java.awt.Font("Segoe UI", 1, 12));
         lblEstado.setForeground(new java.awt.Color(38, 64, 99));
         lblEstado.setText("Estado");
         pnlDetalle.add(lblEstado);
         lblEstado.setBounds(18, 456, 100, 18);
 
-        cmbEstado.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        cmbEstado.setFont(new java.awt.Font("Segoe UI", 0, 13));
+        cmbEstado.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ACTIVO", "INACTIVO" }));
         pnlDetalle.add(cmbEstado);
         cmbEstado.setBounds(18, 477, 468, 36);
 
-        btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnGuardar.setFont(new java.awt.Font("Segoe UI", 1, 13));
         btnGuardar.setText("Registrar producto");
         pnlDetalle.add(btnGuardar);
         btnGuardar.setBounds(18, 532, 250, 44);
 
-        btnDesactivar.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        btnDesactivar.setFont(new java.awt.Font("Segoe UI", 1, 13));
         btnDesactivar.setText("Desactivar");
         btnDesactivar.setEnabled(false);
         pnlDetalle.add(btnDesactivar);
@@ -930,6 +960,7 @@ public class ProductosPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnBuscar;
     private javax.swing.JButton btnDesactivar;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JButton btnNuevo;

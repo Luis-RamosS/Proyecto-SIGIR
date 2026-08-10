@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import sigir.conexion.ConexionBD;
 import sigir.modelo.*;
+import java.math.BigDecimal;
 
 public class VentaDAO {
 
@@ -105,7 +106,20 @@ public class VentaDAO {
                     actualizarStock(cn,p,nuevo);
                     insertarMovimiento(cn,d.getIdProducto(),venta.getIdUsuario(),idVenta,"SALIDA_VENTA",d.getCantidad(),anterior,nuevo,"Salida por venta #"+idVenta);
                 }
-                if ("CREDITO".equals(venta.getTipoVenta())) insertarCredito(cn,idVenta,venta);
+                if ("CREDITO".equals(venta.getTipoVenta())) {
+                    int idCredito =
+                            insertarCredito(
+                                    cn,
+                                    idVenta,
+                                    venta
+                            );
+
+                    insertarAbonoInicialCredito(
+                            cn,
+                            idCredito,
+                            venta
+                    );
+                }
                 try (CallableStatement cs=cn.prepareCall("{call dbo.sp_validar_totales_venta(?)}")) { cs.setInt(1,idVenta); cs.execute(); }
                 cn.commit();
                 return idVenta;
@@ -144,41 +158,151 @@ public class VentaDAO {
         return lista;
     }
 
-    public ResumenVentasDiarias obtenerResumenDiario(LocalDate fecha) throws SQLException {
-        LocalDate dia = fecha == null ? LocalDate.now() : fecha;
+    public ResumenVentasDiarias obtenerResumenDiario(
+            LocalDate fecha) throws SQLException {
+
+        LocalDate dia =
+                fecha == null
+                        ? LocalDate.now()
+                        : fecha;
+
         String sql = """
-            SELECT
-                COALESCE(SUM(CASE WHEN metodo_pago='TRANSFERENCIA' THEN total ELSE 0 END),0) AS transferencias,
-                COALESCE(SUM(CASE WHEN metodo_pago='CREDITO' THEN total ELSE 0 END),0) AS creditos,
-                COALESCE(SUM(CASE WHEN metodo_pago='TARJETA' THEN total ELSE 0 END),0) AS tarjetas,
-                COALESCE(SUM(total),0) AS total_ventas
-            FROM
+            WITH ventas_normales AS
             (
-                SELECT metodo_pago,total
+                SELECT metodo_pago, total
                 FROM dbo.ventas
                 WHERE estado <> 'ANULADA'
                   AND fecha_venta >= ?
-                  AND fecha_venta < DATEADD(DAY,1,?)
-                UNION ALL
-                SELECT metodo_pago,total
+                  AND fecha_venta < DATEADD(DAY, 1, ?)
+            ),
+            cobros_credito AS
+            (
+                SELECT a.monto
+                FROM dbo.abonos_credito AS a
+                INNER JOIN dbo.creditos AS cr
+                    ON cr.id_credito = a.id_credito
+                INNER JOIN dbo.ventas AS v
+                    ON v.id_venta = cr.id_venta
+                WHERE v.estado <> 'ANULADA'
+                  AND a.fecha_abono >= ?
+                  AND a.fecha_abono < DATEADD(DAY, 1, ?)
+            ),
+            ventas_rapidas_dia AS
+            (
+                SELECT total
                 FROM dbo.ventas_rapidas
                 WHERE fecha_registro >= ?
-                  AND fecha_registro < DATEADD(DAY,1,?)
-            ) x;
+                  AND fecha_registro < DATEADD(DAY, 1, ?)
+            )
+            SELECT
+                COALESCE((
+                    SELECT SUM(
+                        CASE
+                            WHEN metodo_pago = 'EFECTIVO'
+                            THEN total
+                            ELSE 0
+                        END
+                    )
+                    FROM ventas_normales
+                ), 0) AS efectivo,
+
+                COALESCE((
+                    SELECT SUM(
+                        CASE
+                            WHEN metodo_pago = 'TRANSFERENCIA'
+                            THEN total
+                            ELSE 0
+                        END
+                    )
+                    FROM ventas_normales
+                ), 0) AS transferencias,
+
+                COALESCE((
+                    SELECT SUM(monto)
+                    FROM cobros_credito
+                ), 0) AS creditos,
+
+                COALESCE((
+                    SELECT SUM(
+                        CASE
+                            WHEN metodo_pago = 'TARJETA'
+                            THEN total
+                            ELSE 0
+                        END
+                    )
+                    FROM ventas_normales
+                ), 0) AS tarjetas,
+
+                COALESCE((
+                    SELECT SUM(total)
+                    FROM ventas_rapidas_dia
+                ), 0) AS ventas_rapidas,
+
+                COALESCE((
+                    SELECT SUM(total)
+                    FROM ventas_normales
+                    WHERE metodo_pago <> 'CREDITO'
+                ), 0)
+                +
+                COALESCE((
+                    SELECT SUM(monto)
+                    FROM cobros_credito
+                ), 0)
+                +
+                COALESCE((
+                    SELECT SUM(total)
+                    FROM ventas_rapidas_dia
+                ), 0) AS total_ventas;
             """;
-        ResumenVentasDiarias resumen = new ResumenVentasDiarias();
-        try (Connection cn=ConexionBD.obtenerConexion(); PreparedStatement ps=cn.prepareStatement(sql)) {
-            Date d=Date.valueOf(dia);
-            ps.setDate(1,d); ps.setDate(2,d); ps.setDate(3,d); ps.setDate(4,d);
-            try(ResultSet rs=ps.executeQuery()) {
-                if(rs.next()) {
-                    resumen.setTransferencias(rs.getBigDecimal("transferencias"));
-                    resumen.setCreditos(rs.getBigDecimal("creditos"));
-                    resumen.setTarjetas(rs.getBigDecimal("tarjetas"));
-                    resumen.setTotalVentas(rs.getBigDecimal("total_ventas"));
+
+        ResumenVentasDiarias resumen =
+                new ResumenVentasDiarias();
+
+        try (Connection cn =
+                     ConexionBD.obtenerConexion();
+             PreparedStatement ps =
+                     cn.prepareStatement(sql)) {
+
+            Date d = Date.valueOf(dia);
+
+            ps.setDate(1, d);
+            ps.setDate(2, d);
+            ps.setDate(3, d);
+            ps.setDate(4, d);
+            ps.setDate(5, d);
+            ps.setDate(6, d);
+
+            try (ResultSet rs =
+                         ps.executeQuery()) {
+
+                if (rs.next()) {
+                    resumen.setEfectivo(
+                            rs.getBigDecimal("efectivo")
+                    );
+
+                    resumen.setTransferencias(
+                            rs.getBigDecimal("transferencias")
+                    );
+
+                    resumen.setCreditos(
+                            rs.getBigDecimal("creditos")
+                    );
+
+                    resumen.setTarjetas(
+                            rs.getBigDecimal("tarjetas")
+                    );
+
+                    resumen.setVentasRapidas(
+                            rs.getBigDecimal("ventas_rapidas")
+                    );
+
+                    resumen.setTotalVentas(
+                            rs.getBigDecimal("total_ventas")
+                    );
                 }
             }
         }
+
         return resumen;
     }
 
@@ -296,12 +420,183 @@ public class VentaDAO {
         try(PreparedStatement ps=cn.prepareStatement(sql)){ ps.setInt(1,idProducto); ps.setInt(2,idUsuario); ps.setInt(3,idVenta); ps.setString(4,tipo); ps.setInt(5,cantidad); ps.setInt(6,anterior); ps.setInt(7,nuevo); ps.setString(8,motivo); ps.executeUpdate(); }
     }
 
-    private void insertarCredito(Connection cn,int idVenta,Venta v)throws SQLException{
-        String sql="INSERT INTO dbo.creditos(id_venta,id_cliente,fecha_inicio,fecha_vencimiento,total_credito,saldo_pendiente,monto_cuota,estado,observaciones) VALUES(?,?,?,?,?,?,?,'PENDIENTE',?)";
-        try(PreparedStatement ps=cn.prepareStatement(sql)){
-            ps.setInt(1,idVenta); ps.setInt(2,v.getIdCliente()); ps.setDate(3,Date.valueOf(v.getFechaVenta().toLocalDate()));
-            if(v.getFechaVencimientoCredito()==null) ps.setNull(4,Types.DATE); else ps.setDate(4,Date.valueOf(v.getFechaVencimientoCredito()));
-            ps.setBigDecimal(5,v.getTotal()); ps.setBigDecimal(6,v.getTotal()); if(v.getMontoCuotaCredito()==null) ps.setNull(7,Types.DECIMAL); else ps.setBigDecimal(7,v.getMontoCuotaCredito()); setNulo(ps,8,v.getObservaciones()); ps.executeUpdate();
+    private int insertarCredito(
+            Connection cn,
+            int idVenta,
+            Venta v) throws SQLException {
+
+        BigDecimal saldoPendiente =
+                v.getTotal()
+                        .subtract(v.getMontoPagado())
+                        .max(BigDecimal.ZERO);
+
+        String estadoCredito =
+                saldoPendiente.signum() == 0
+                        ? "PAGADO"
+                        : "PENDIENTE";
+
+        String sql = """
+            INSERT INTO dbo.creditos
+            (
+                id_venta,
+                id_cliente,
+                fecha_inicio,
+                fecha_vencimiento,
+                total_credito,
+                saldo_pendiente,
+                monto_cuota,
+                estado,
+                observaciones
+            )
+            VALUES(?,?,?,?,?,?,?,?,?);
+            """;
+
+        try (PreparedStatement ps =
+                     cn.prepareStatement(
+                             sql,
+                             Statement.RETURN_GENERATED_KEYS
+                     )) {
+
+            ps.setInt(1, idVenta);
+            ps.setInt(2, v.getIdCliente());
+            ps.setDate(
+                    3,
+                    Date.valueOf(
+                            v.getFechaVenta()
+                                    .toLocalDate()
+                    )
+            );
+
+            if (v.getFechaVencimientoCredito()
+                    == null) {
+
+                ps.setNull(
+                        4,
+                        Types.DATE
+                );
+            } else {
+                ps.setDate(
+                        4,
+                        Date.valueOf(
+                                v.getFechaVencimientoCredito()
+                        )
+                );
+            }
+
+            ps.setBigDecimal(
+                    5,
+                    v.getTotal()
+            );
+
+            ps.setBigDecimal(
+                    6,
+                    saldoPendiente
+            );
+
+            if (v.getMontoCuotaCredito()
+                    == null) {
+
+                ps.setNull(
+                        7,
+                        Types.DECIMAL
+                );
+            } else {
+                ps.setBigDecimal(
+                        7,
+                        v.getMontoCuotaCredito()
+                );
+            }
+
+            ps.setString(
+                    8,
+                    estadoCredito
+            );
+
+            setNulo(
+                    ps,
+                    9,
+                    v.getObservaciones()
+            );
+
+            ps.executeUpdate();
+
+            try (ResultSet rs =
+                         ps.getGeneratedKeys()) {
+
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+
+        throw new SQLException(
+                "SQL Server no devolvió el id del crédito."
+        );
+    }
+
+    private void insertarAbonoInicialCredito(
+            Connection cn,
+            int idCredito,
+            Venta v) throws SQLException {
+
+        BigDecimal abonoInicial =
+                v.getMontoPagado() == null
+                        ? BigDecimal.ZERO
+                        : v.getMontoPagado();
+
+        if (abonoInicial.signum() <= 0) {
+            return;
+        }
+
+        String sql = """
+            INSERT INTO dbo.abonos_credito
+            (
+                id_credito,
+                id_usuario,
+                fecha_abono,
+                monto,
+                metodo_pago,
+                referencia,
+                observaciones
+            )
+            VALUES
+            (
+                ?,
+                ?,
+                ?,
+                ?,
+                'EFECTIVO',
+                'PAGO-INICIAL',
+                N'Abono inicial registrado al crear la venta a crédito.'
+            );
+            """;
+
+        try (PreparedStatement ps =
+                     cn.prepareStatement(sql)) {
+
+            ps.setInt(
+                    1,
+                    idCredito
+            );
+
+            ps.setInt(
+                    2,
+                    v.getIdUsuario()
+            );
+
+            ps.setTimestamp(
+                    3,
+                    Timestamp.valueOf(
+                            v.getFechaVenta()
+                    )
+            );
+
+            ps.setBigDecimal(
+                    4,
+                    abonoInicial
+            );
+
+            ps.executeUpdate();
         }
     }
 

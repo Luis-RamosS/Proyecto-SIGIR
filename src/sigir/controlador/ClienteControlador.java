@@ -27,6 +27,9 @@ public class ClienteControlador {
     private String estadoClienteSeleccionado;
     private Integer idPendienteSeleccionar;
 
+    private String firmaFormularioBase;
+    private boolean ignorandoSeleccion;
+
     private SwingWorker<DatosCarga, Void>
             trabajadorCarga;
 
@@ -308,6 +311,11 @@ public class ClienteControlador {
     }
 
     public void nuevo() {
+        if (!confirmarDescartarCambios()) {
+            restaurarSeleccionActual();
+            return;
+        }
+
         idClienteSeleccionado = null;
         estadoClienteSeleccionado = null;
         idPendienteSeleccionar = null;
@@ -318,9 +326,15 @@ public class ClienteControlador {
                 false,
                 null
         );
+
+        actualizarFirmaFormularioBase();
     }
 
     public void seleccionarFila() {
+        if (ignorandoSeleccion) {
+            return;
+        }
+
         int filaModelo =
                 vista.getFilaSeleccionadaModelo();
 
@@ -332,6 +346,11 @@ public class ClienteControlador {
 
         Cliente cliente =
                 clientes.get(filaModelo);
+
+        if (!confirmarDescartarCambios()) {
+            restaurarSeleccionActual();
+            return;
+        }
 
         idClienteSeleccionado =
                 cliente.getIdCliente();
@@ -345,10 +364,15 @@ public class ClienteControlador {
                 true,
                 estadoClienteSeleccionado
         );
+
+        actualizarFirmaFormularioBase();
     }
 
     public void guardar() {
         try {
+            boolean esNuevo =
+                    idClienteSeleccionado == null;
+
             Cliente cliente =
                     vista.obtenerClienteFormulario();
 
@@ -378,11 +402,8 @@ public class ClienteControlador {
                 idClienteSeleccionado =
                         idGenerado;
 
-                JOptionPane.showMessageDialog(
-                        vista,
-                        "Cliente registrado correctamente.",
-                        "SIGIR",
-                        JOptionPane.INFORMATION_MESSAGE
+                cliente.setIdCliente(
+                        idGenerado
                 );
 
             } else {
@@ -400,10 +421,33 @@ public class ClienteControlador {
                 );
             }
 
+            actualizarFirmaFormularioBase();
+
             idPendienteSeleccionar =
                     idClienteSeleccionado;
 
             buscar();
+
+            if (esNuevo) {
+                int respuesta =
+                        JOptionPane.showConfirmDialog(
+                                vista,
+                                "Cliente registrado correctamente.\n\n"
+                                + "¿Deseas realizar una venta "
+                                + "con este cliente?",
+                                "Cliente registrado",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.QUESTION_MESSAGE
+                        );
+
+                if (respuesta
+                        == JOptionPane.YES_OPTION) {
+
+                    vista.abrirVentaConCliente(
+                            cliente
+                    );
+                }
+            }
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
@@ -618,6 +662,69 @@ public class ClienteControlador {
         }
     }
 
+    private void actualizarFirmaFormularioBase() {
+        firmaFormularioBase =
+                vista.firmaFormulario();
+    }
+
+    private boolean hayCambiosSinGuardar() {
+        if (firmaFormularioBase == null) {
+            return false;
+        }
+
+        return !firmaFormularioBase.equals(
+                vista.firmaFormulario()
+        );
+    }
+
+    private boolean confirmarDescartarCambios() {
+        if (!hayCambiosSinGuardar()) {
+            return true;
+        }
+
+        int respuesta =
+                JOptionPane.showConfirmDialog(
+                        vista,
+                        "Hay cambios sin guardar.\\n\\n"
+                        + "¿Deseas descartar los cambios?",
+                        "Descartar cambios",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+        return respuesta
+                == JOptionPane.YES_OPTION;
+    }
+
+    private void restaurarSeleccionActual() {
+        ignorandoSeleccion = true;
+
+        try {
+            if (idClienteSeleccionado == null) {
+                vista.limpiarSeleccionTabla();
+                return;
+            }
+
+            for (int i = 0;
+                    i < clientes.size();
+                    i++) {
+
+                if (clientes.get(i)
+                        .getIdCliente()
+                        == idClienteSeleccionado) {
+
+                    vista.seleccionarFilaModelo(i);
+                    return;
+                }
+            }
+
+            vista.limpiarSeleccionTabla();
+
+        } finally {
+            ignorandoSeleccion = false;
+        }
+    }
+
     private void seleccionarClienteEnTabla(
             int idCliente) {
 
@@ -629,8 +736,30 @@ public class ClienteControlador {
                     .getIdCliente()
                     == idCliente) {
 
-                vista.seleccionarFilaModelo(i);
-                seleccionarFila();
+                ignorandoSeleccion = true;
+
+                try {
+                    vista.seleccionarFilaModelo(i);
+                } finally {
+                    ignorandoSeleccion = false;
+                }
+
+                Cliente cliente =
+                        clientes.get(i);
+
+                idClienteSeleccionado =
+                        cliente.getIdCliente();
+
+                estadoClienteSeleccionado =
+                        cliente.getEstado();
+
+                vista.mostrarCliente(cliente);
+                vista.setModoEdicion(
+                        true,
+                        estadoClienteSeleccionado
+                );
+
+                actualizarFirmaFormularioBase();
                 break;
             }
         }

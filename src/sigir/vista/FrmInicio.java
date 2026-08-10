@@ -26,6 +26,8 @@ import sigir.util.Sesion;
 import sigir.vista.paneles.ConfiguracionPanel;
 import sigir.componentes.BuscadorGlobal;
 import sigir.modelo.ModuloInicio;
+import sigir.modelo.Cliente;
+import sigir.modelo.Proveedor;
 import sigir.vista.paneles.InicioPanel;
 
 /**
@@ -493,6 +495,54 @@ public class FrmInicio extends javax.swing.JFrame {
 
         estilizarTabla(tblVentasRecientes);
         estilizarTabla(tblPocoInventario);
+    }
+
+    public void abrirVentaConCliente(
+            Cliente cliente) {
+
+        if (cliente == null
+                || cliente.getIdCliente() <= 0) {
+
+            return;
+        }
+
+        if (ventasPanel == null) {
+            ventasPanel = new VentasPanel();
+        }
+
+        mostrarModulo(
+                btnVentas,
+                ventasPanel
+        );
+
+        ventasPanel.activar();
+        ventasPanel.prepararNuevaVentaParaCliente(
+                cliente
+        );
+    }
+
+    public void abrirCompraConProveedor(
+            Proveedor proveedor) {
+
+        if (proveedor == null
+                || proveedor.getIdProveedor() <= 0) {
+
+            return;
+        }
+
+        if (comprasPanel == null) {
+            comprasPanel = new ComprasPanel();
+        }
+
+        mostrarModulo(
+                btnCompras,
+                comprasPanel
+        );
+
+        comprasPanel.activar();
+        comprasPanel.prepararNuevaCompraParaProveedor(
+                proveedor
+        );
     }
 
     private void configurarNavegacion() {

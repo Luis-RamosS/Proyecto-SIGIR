@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.util.List;
+import javax.swing.SwingUtilities;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ListSelectionModel;
@@ -13,6 +14,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import sigir.controlador.ProveedorControlador;
 import sigir.modelo.Proveedor;
+import sigir.vista.FrmInicio;
 import sigir.util.FiltroTiempoReal;
 
 public class ProveedoresPanel extends javax.swing.JPanel {
@@ -267,6 +269,34 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                         controlador.seleccionarFila();
                     }
                 });
+    }
+
+    public String firmaFormulario() {
+        return String.join(
+                "~|~",
+                txtNombreProveedor.getText(),
+                txtRtn.getText(),
+                txtContacto.getText(),
+                txtTelefono.getText(),
+                txtCorreo.getText(),
+                txtDireccion.getText(),
+                String.valueOf(cmbEstado.getSelectedItem())
+        );
+    }
+
+    public void limpiarSeleccionTabla() {
+        tblProveedores.clearSelection();
+    }
+
+    public void abrirCompraConProveedor(
+            Proveedor proveedor) {
+
+        java.awt.Window ventana =
+                SwingUtilities.getWindowAncestor(this);
+
+        if (ventana instanceof FrmInicio inicio) {
+            inicio.abrirCompraConProveedor(proveedor);
+        }
     }
 
     public String getTextoBusqueda() {

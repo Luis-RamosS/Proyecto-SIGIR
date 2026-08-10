@@ -84,8 +84,14 @@ public class VentasPanel extends javax.swing.JPanel {
         txtUsuario.setText(Sesion.haySesionActiva()?Sesion.getNombreCompleto():"");
         tblDetalleVenta.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); tblHistorialVentas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); tblHistorialVentas.setAutoCreateRowSorter(true);
         CampoSeleccionUtil.seleccionarTodoAlEnfocar(
-                txtBuscarCliente, txtBuscarProducto, txtMontoRecibido,
-                txtCantidad, txtDiasGarantia, txtComprobanteTransferencia);
+                txtBuscarCliente,
+                txtBuscarProducto,
+                txtMontoRecibido,
+                txtMontoCuota,
+                txtCantidad,
+                txtDiasGarantia,
+                txtComprobanteTransferencia
+        );
         SelectorFechaUtil.instalar(txtFechaVenta, false);
         SelectorFechaUtil.instalar(txtFechaVencimiento, true);
         SelectorFechaUtil.instalar(txtFechaDesde, true);
@@ -219,12 +225,61 @@ public class VentasPanel extends javax.swing.JPanel {
     }
 
     private void configurarMetodoPago(){
-        String m=getMetodoPago(); boolean efectivo="EFECTIVO".equals(m), credito="CREDITO".equals(m), transferencia="TRANSFERENCIA".equals(m);
-        txtMontoRecibido.setEnabled(efectivo); if(!efectivo)txtMontoRecibido.setText("0.00");
-        txtFechaVencimiento.setEnabled(credito); txtMontoCuota.setEnabled(credito); lblFechaVencimiento.setEnabled(credito); lblMontoCuota.setEnabled(credito);
-        txtComprobanteTransferencia.setEnabled(transferencia); lblComprobanteTransferencia.setEnabled(transferencia);
-        if(!credito){txtFechaVencimiento.setText("");txtMontoCuota.setText("");}
-        if(!transferencia){txtComprobanteTransferencia.setText("");}
+        String m=getMetodoPago();
+        boolean efectivo="EFECTIVO".equals(m);
+        boolean credito="CREDITO".equals(m);
+        boolean transferencia="TRANSFERENCIA".equals(m);
+
+        txtMontoRecibido.setEnabled(efectivo || credito);
+        lblMontoRecibido.setEnabled(efectivo || credito);
+        lblMontoRecibido.setText(
+                credito
+                        ? "Abono inicial"
+                        : "Monto recibido"
+        );
+
+        if(!efectivo && !credito){
+            txtMontoRecibido.setText("0.00");
+        }
+
+        txtFechaVencimiento.setEnabled(credito);
+        txtMontoCuota.setEnabled(credito);
+        lblFechaVencimiento.setEnabled(credito);
+        lblMontoCuota.setEnabled(credito);
+
+        txtComprobanteTransferencia.setEnabled(transferencia);
+        lblComprobanteTransferencia.setEnabled(transferencia);
+
+        if(!credito){
+            txtFechaVencimiento.setText("");
+            txtMontoCuota.setText("");
+        }
+
+        if(!transferencia){
+            txtComprobanteTransferencia.setText("");
+        }
+    }
+
+    public void prepararNuevaVentaParaCliente(
+            Cliente cliente) {
+
+        if (cliente == null
+                || cliente.getIdCliente() <= 0) {
+
+            return;
+        }
+
+        controlador.nuevaVenta();
+
+        clienteSeleccionado =
+                cliente;
+
+        buscadorClientes.seleccionar(
+                cliente
+        );
+
+        tabsVentas.setSelectedIndex(0);
+        txtBuscarProducto.requestFocusInWindow();
     }
 
     public void cargarClientes(List<Cliente> clientes) {
@@ -307,7 +362,7 @@ public class VentasPanel extends javax.swing.JPanel {
     public void actualizarResumen(int productos,int unidades,BigDecimal subtotal,BigDecimal descuento,BigDecimal porcentaje,BigDecimal total,BigDecimal cambio){ lblProductosValor.setText(String.valueOf(productos)); lblUnidadesValor.setText(String.valueOf(unidades)); lblSubtotalValor.setText(formatearMoneda(subtotal)); txtDescuentoPorcentaje.setText(porcentaje.setScale(2,RoundingMode.HALF_UP).toPlainString()+" %"); lblDescuentoMontoValor.setText(formatearMoneda(descuento)); lblTotalValor.setText(formatearMoneda(total)); txtCambio.setText(cambio.setScale(2,RoundingMode.HALF_UP).toPlainString()); }
     public void configurarDescuento(boolean hay,boolean puede){ txtMotivoDescuento.setEnabled(hay&&puede); lblEstadoDescuento.setText(!hay?"Sin descuento aplicado":puede?"Descuento autorizado por el DUEÑO actual":"Requiere autorización del DUEÑO"); if(!hay)txtMotivoDescuento.setText(""); }
 
-    public String getNumeroFactura(){return txtNumeroFactura.getText().trim();} public void setNumeroFactura(String n){txtNumeroFactura.setText(n);} public LocalDate getFechaVenta(){return fechaObligatoria(txtFechaVenta.getText(),"fecha de venta");} public String getMetodoPago(){Object v=cmbMetodoPago.getSelectedItem();return v==null?"":v.toString();} public BigDecimal getMontoRecibido(){return convertirDecimal(txtMontoRecibido.getText(),"monto recibido");} public String getObservaciones(){return opcional(txtObservaciones.getText());} public String getComprobanteTransferencia(){return opcional(txtComprobanteTransferencia.getText());} public String getMotivoDescuento(){return opcional(txtMotivoDescuento.getText());} public LocalDate getFechaVencimientoCredito(){return fechaOpcional(txtFechaVencimiento.getText(),"fecha de vencimiento");} public BigDecimal getMontoCuotaCredito(){String v=txtMontoCuota.getText().trim();return v.isBlank()?null:convertirDecimal(v,"monto de cuota");}
+    public String getNumeroFactura(){return txtNumeroFactura.getText().trim();} public void setNumeroFactura(String n){txtNumeroFactura.setText(n);} public LocalDate getFechaVenta(){return fechaObligatoria(txtFechaVenta.getText(),"fecha de venta");} public String getMetodoPago(){Object v=cmbMetodoPago.getSelectedItem();return v==null?"":v.toString();} public BigDecimal getMontoRecibido(){return convertirDecimal(txtMontoRecibido.getText(),"monto recibido / abono inicial");} public String getObservaciones(){return opcional(txtObservaciones.getText());} public String getComprobanteTransferencia(){return opcional(txtComprobanteTransferencia.getText());} public String getMotivoDescuento(){return opcional(txtMotivoDescuento.getText());} public LocalDate getFechaVencimientoCredito(){return fechaOpcional(txtFechaVencimiento.getText(),"fecha de vencimiento");} public BigDecimal getMontoCuotaCredito(){String v=txtMontoCuota.getText().trim();return v.isBlank()?null:convertirDecimal(v,"monto de cuota");}
 
     public void limpiarVenta() {
         clienteSeleccionado = null;

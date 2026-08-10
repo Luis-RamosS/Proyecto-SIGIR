@@ -24,6 +24,9 @@ public class ProveedorControlador {
     private String estadoProveedorSeleccionado;
     private Integer idPendienteSeleccionar;
 
+    private String firmaFormularioBase;
+    private boolean ignorandoSeleccion;
+
     private SwingWorker<List<Proveedor>, Void>
             trabajadorCarga;
 
@@ -280,6 +283,11 @@ public class ProveedorControlador {
     }
 
     public void nuevo() {
+        if (!confirmarDescartarCambios()) {
+            restaurarSeleccionActual();
+            return;
+        }
+
         idProveedorSeleccionado = null;
         estadoProveedorSeleccionado = null;
         idPendienteSeleccionar = null;
@@ -290,9 +298,15 @@ public class ProveedorControlador {
                 false,
                 null
         );
+
+        actualizarFirmaFormularioBase();
     }
 
     public void seleccionarFila() {
+        if (ignorandoSeleccion) {
+            return;
+        }
+
         int filaModelo =
                 vista.getFilaSeleccionadaModelo();
 
@@ -305,6 +319,11 @@ public class ProveedorControlador {
 
         Proveedor proveedor =
                 proveedores.get(filaModelo);
+
+        if (!confirmarDescartarCambios()) {
+            restaurarSeleccionActual();
+            return;
+        }
 
         idProveedorSeleccionado =
                 proveedor.getIdProveedor();
@@ -320,10 +339,15 @@ public class ProveedorControlador {
                 true,
                 estadoProveedorSeleccionado
         );
+
+        actualizarFirmaFormularioBase();
     }
 
     public void guardar() {
         try {
+            boolean esNuevo =
+                    idProveedorSeleccionado == null;
+
             Proveedor proveedor =
                     vista.obtenerProveedorFormulario();
 
@@ -355,12 +379,8 @@ public class ProveedorControlador {
                 idProveedorSeleccionado =
                         idGenerado;
 
-                JOptionPane.showMessageDialog(
-                        vista,
-                        "Proveedor registrado "
-                        + "correctamente.",
-                        "SIGIR",
-                        JOptionPane.INFORMATION_MESSAGE
+                proveedor.setIdProveedor(
+                        idGenerado
                 );
 
             } else {
@@ -381,10 +401,33 @@ public class ProveedorControlador {
                 );
             }
 
+            actualizarFirmaFormularioBase();
+
             idPendienteSeleccionar =
                     idProveedorSeleccionado;
 
             buscar();
+
+            if (esNuevo) {
+                int respuesta =
+                        JOptionPane.showConfirmDialog(
+                                vista,
+                                "Proveedor registrado correctamente.\n\n"
+                                + "¿Deseas realizar una compra "
+                                + "con este proveedor?",
+                                "Proveedor registrado",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.QUESTION_MESSAGE
+                        );
+
+                if (respuesta
+                        == JOptionPane.YES_OPTION) {
+
+                    vista.abrirCompraConProveedor(
+                            proveedor
+                    );
+                }
+            }
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(
@@ -608,6 +651,69 @@ public class ProveedorControlador {
         }
     }
 
+    private void actualizarFirmaFormularioBase() {
+        firmaFormularioBase =
+                vista.firmaFormulario();
+    }
+
+    private boolean hayCambiosSinGuardar() {
+        if (firmaFormularioBase == null) {
+            return false;
+        }
+
+        return !firmaFormularioBase.equals(
+                vista.firmaFormulario()
+        );
+    }
+
+    private boolean confirmarDescartarCambios() {
+        if (!hayCambiosSinGuardar()) {
+            return true;
+        }
+
+        int respuesta =
+                JOptionPane.showConfirmDialog(
+                        vista,
+                        "Hay cambios sin guardar.\\n\\n"
+                        + "¿Deseas descartar los cambios?",
+                        "Descartar cambios",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+        return respuesta
+                == JOptionPane.YES_OPTION;
+    }
+
+    private void restaurarSeleccionActual() {
+        ignorandoSeleccion = true;
+
+        try {
+            if (idProveedorSeleccionado == null) {
+                vista.limpiarSeleccionTabla();
+                return;
+            }
+
+            for (int i = 0;
+                    i < proveedores.size();
+                    i++) {
+
+                if (proveedores.get(i)
+                        .getIdProveedor()
+                        == idProveedorSeleccionado) {
+
+                    vista.seleccionarFilaModelo(i);
+                    return;
+                }
+            }
+
+            vista.limpiarSeleccionTabla();
+
+        } finally {
+            ignorandoSeleccion = false;
+        }
+    }
+
     private void seleccionarProveedorEnTabla(
             int idProveedor) {
 
@@ -619,8 +725,30 @@ public class ProveedorControlador {
                     .getIdProveedor()
                     == idProveedor) {
 
-                vista.seleccionarFilaModelo(i);
-                seleccionarFila();
+                ignorandoSeleccion = true;
+
+                try {
+                    vista.seleccionarFilaModelo(i);
+                } finally {
+                    ignorandoSeleccion = false;
+                }
+
+                Proveedor proveedor =
+                        proveedores.get(i);
+
+                idProveedorSeleccionado =
+                        proveedor.getIdProveedor();
+
+                estadoProveedorSeleccionado =
+                        proveedor.getEstado();
+
+                vista.mostrarProveedor(proveedor);
+                vista.setModoEdicion(
+                        true,
+                        estadoProveedorSeleccionado
+                );
+
+                actualizarFirmaFormularioBase();
                 break;
             }
         }

@@ -65,9 +65,24 @@ public class ReparacionesPanel extends JPanel {
         tblRepuestos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tblHistorialGeneral.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);tblHistorialGeneral.setAutoCreateRowSorter(true);
         txtFechaPrometida.setText(LocalDate.now().plusDays(3).format(FECHA));
-        CampoSeleccionUtil.seleccionarTodoAlEnfocar(txtBuscarCliente, txtBuscarRepuesto, txtBuscarOrden, txtBuscarHistorial);
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(
+                txtBuscarCliente,
+                txtBuscarRepuesto,
+                txtBuscarOrden,
+                txtBuscarHistorial,
+                txtCostoEstimado,
+                txtCostoEstimadoGestion,
+                txtCostoFinal,
+                txtPrecioRepuesto
+        );
+
         SelectorFechaUtil.instalar(txtFechaPrometida, true);
         SelectorFechaUtil.instalar(txtFechaPrometidaGestion, true);
+        SelectorFechaUtil.instalar(txtGarantiaHasta, true);
+
+        txtGarantiaHasta.setToolTipText(
+                "Selecciona la fecha de vencimiento de la garantía."
+        );
     }
 
     private void configurarBuscadores(){

@@ -289,7 +289,39 @@ public class VentaControlador {
             if(detalles.isEmpty()) throw new IllegalArgumentException("Agrega al menos un producto.");
             Venta v=construirVenta(c); validar(v);
             if(dao.existeNumeroFactura(v.getNumeroFactura())){ v.setNumeroFactura(generarFactura()); vista.setNumeroFactura(v.getNumeroFactura()); }
-            int r=JOptionPane.showConfirmDialog(vista,"Se registrará la venta por "+vista.formatearMoneda(v.getTotal())+".\nEl inventario se actualizará automáticamente.\n\n¿Deseas continuar?","Confirmar venta",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+            String mensajeConfirmacion;
+
+            if ("CREDITO".equals(v.getTipoVenta())) {
+                BigDecimal saldoCredito =
+                        v.getTotal()
+                                .subtract(v.getMontoPagado())
+                                .max(BigDecimal.ZERO);
+
+                mensajeConfirmacion =
+                        "Se registrará una venta a crédito por "
+                        + vista.formatearMoneda(v.getTotal())
+                        + ".\nAbono inicial: "
+                        + vista.formatearMoneda(v.getMontoPagado())
+                        + ".\nSaldo pendiente: "
+                        + vista.formatearMoneda(saldoCredito)
+                        + ".\n\nEl cierre diario contará solamente "
+                        + "el dinero realmente recibido."
+                        + "\n\n¿Deseas continuar?";
+            } else {
+                mensajeConfirmacion =
+                        "Se registrará la venta por "
+                        + vista.formatearMoneda(v.getTotal())
+                        + ".\nEl inventario se actualizará "
+                        + "automáticamente.\n\n¿Deseas continuar?";
+            }
+
+            int r=JOptionPane.showConfirmDialog(
+                    vista,
+                    mensajeConfirmacion,
+                    "Confirmar venta",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE
+            );
             if(r!=JOptionPane.YES_OPTION) return;
             vista.establecerProcesando(true);
             int id=dao.registrar(v); v.setIdVenta(id);
@@ -414,10 +446,31 @@ public class VentaControlador {
         switch(v.getMetodoPago()){
             case "EFECTIVO" -> { BigDecimal recibido=vista.getMontoRecibido(); v.setMontoPagado(recibido); v.setCambio(recibido.subtract(v.getTotal()).max(BigDecimal.ZERO)); }
             case "TRANSFERENCIA","TARJETA" -> { v.setMontoPagado(v.getTotal()); v.setCambio(BigDecimal.ZERO); }
-            case "CREDITO" -> { v.setMontoPagado(BigDecimal.ZERO); v.setCambio(BigDecimal.ZERO); v.setFechaVencimientoCredito(vista.getFechaVencimientoCredito()); v.setMontoCuotaCredito(vista.getMontoCuotaCredito()); }
+            case "CREDITO" -> {
+                BigDecimal abonoInicial =
+                        vista.getMontoRecibido();
+
+                v.setMontoPagado(abonoInicial);
+                v.setCambio(BigDecimal.ZERO);
+                v.setFechaVencimientoCredito(
+                        vista.getFechaVencimientoCredito()
+                );
+                v.setMontoCuotaCredito(
+                        vista.getMontoCuotaCredito()
+                );
+            }
             default -> throw new IllegalArgumentException("Selecciona un método de pago válido.");
         }
-        v.setEstado("CREDITO".equals(v.getTipoVenta())?"PENDIENTE":"COMPLETADA");
+        if ("CREDITO".equals(v.getTipoVenta())) {
+            v.setEstado(
+                    v.getMontoPagado()
+                            .compareTo(v.getTotal()) >= 0
+                            ? "COMPLETADA"
+                            : "PENDIENTE"
+            );
+        } else {
+            v.setEstado("COMPLETADA");
+        }
         return v;
     }
 
@@ -430,6 +483,16 @@ public class VentaControlador {
         if("EFECTIVO".equals(v.getMetodoPago())&&v.getMontoPagado().compareTo(v.getTotal())<0) throw new IllegalArgumentException("El monto recibido no cubre el total.");
         if("TRANSFERENCIA".equals(v.getMetodoPago()) && (v.getComprobanteTransferencia()==null || v.getComprobanteTransferencia().isBlank())) throw new IllegalArgumentException("Ingresa el comprobante o referencia de la transferencia.");
         if("CREDITO".equals(v.getTipoVenta())){
+            if(v.getMontoPagado().compareTo(BigDecimal.ZERO)<0) {
+                throw new IllegalArgumentException(
+                        "El abono inicial no puede ser negativo."
+                );
+            }
+            if(v.getMontoPagado().compareTo(v.getTotal())>0) {
+                throw new IllegalArgumentException(
+                        "El abono inicial no puede superar el total de la venta."
+                );
+            }
             if(v.getFechaVencimientoCredito()!=null&&v.getFechaVencimientoCredito().isBefore(v.getFechaVenta().toLocalDate())) throw new IllegalArgumentException("La fecha de vencimiento no puede ser anterior a la venta.");
             if(v.getMontoCuotaCredito()!=null&&v.getMontoCuotaCredito().compareTo(BigDecimal.ZERO)<=0) throw new IllegalArgumentException("La cuota debe ser mayor que cero.");
         }

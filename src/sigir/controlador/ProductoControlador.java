@@ -10,9 +10,6 @@ import sigir.dao.ProductoDAO;
 import sigir.modelo.Categoria;
 import sigir.modelo.Producto;
 import sigir.vista.paneles.ProductosPanel;
-import java.awt.Cursor;
-import java.util.concurrent.ExecutionException;
-import javax.swing.SwingWorker;
 
 public class ProductoControlador {
 
@@ -23,19 +20,8 @@ public class ProductoControlador {
     private List<Producto> productos = new ArrayList<>();
     private Integer idProductoSeleccionado;
 
-    private SwingWorker<DatosCarga, Void> trabajador;
-
-    private long ultimaCarga;
-
-    private static final long VIGENCIA_DATOS_MS
-            = 30_000;
-
-    private record DatosCarga(
-            List<Categoria> categorias,
-            List<Producto> productos
-            ) {
-
-    }
+    private String firmaFormularioBase;
+    private boolean ignorandoSeleccion;
 
     public ProductoControlador(ProductosPanel vista) {
         this.vista = vista;
@@ -43,136 +29,17 @@ public class ProductoControlador {
         this.categoriaDAO = new CategoriaDAO();
     }
 
-    public void iniciarAsync() {
-        cargarAsync(true);
+    public void iniciar() {
+        cargarCategorias();
+        buscar();
+        nuevo();
     }
 
-    public void recargarAsync() {
-        cargarAsync(true);
+    public void recargar() {
+        cargarCategorias();
+        buscar();
     }
 
-    public void recargarSiNecesario() {
-
-        long tiempoTranscurrido
-                = System.currentTimeMillis()
-                - ultimaCarga;
-
-        if (tiempoTranscurrido
-                >= VIGENCIA_DATOS_MS) {
-
-            cargarAsync(false);
-        }
-    }
-
-    
-    private void cargarAsync(
-            boolean cargarCategorias) {
-
-        if (trabajador != null
-                && !trabajador.isDone()) {
-
-            return;
-        }
-
-        Categoria categoria
-                = vista.getCategoriaFiltro();
-
-        Integer idCategoria
-                = categoria == null
-                || categoria.getIdCategoria() <= 0
-                ? null
-                : categoria.getIdCategoria();
-
-        String textoBusqueda
-                = vista.getTextoBusqueda();
-
-        vista.setCursor(
-                Cursor.getPredefinedCursor(
-                        Cursor.WAIT_CURSOR
-                )
-        );
-
-        trabajador
-                = new SwingWorker<>() {
-
-            @Override
-            protected DatosCarga doInBackground()
-                    throws Exception {
-
-                List<Categoria> categorias
-                        = cargarCategorias
-                                ? categoriaDAO
-                                        .listarActivas()
-                                : List.of();
-
-                List<Producto> productosCargados
-                        = productoDAO.listar(
-                                textoBusqueda,
-                                idCategoria
-                        );
-
-                return new DatosCarga(
-                        categorias,
-                        productosCargados
-                );
-            }
-
-            @Override
-            protected void done() {
-
-                try {
-                    DatosCarga datos = get();
-
-                    if (cargarCategorias) {
-                        vista.cargarCategorias(
-                                datos.categorias()
-                        );
-                    }
-
-                    productos
-                            = datos.productos();
-
-                    vista.mostrarProductos(productos);
-
-                    vista.mostrarCantidad(
-                            productos.size()
-                    );
-
-                    ultimaCarga
-                            = System.currentTimeMillis();
-
-                } catch (InterruptedException ex) {
-
-                    Thread.currentThread()
-                            .interrupt();
-
-                } catch (ExecutionException ex) {
-
-                    Throwable causa
-                            = ex.getCause();
-
-                    JOptionPane.showMessageDialog(
-                            vista,
-                            "No fue posible cargar "
-                            + "los productos.\n\n"
-                            + (causa == null
-                                    ? ex.getMessage()
-                                    : causa.getMessage()),
-                            "Error de base de datos",
-                            JOptionPane.ERROR_MESSAGE
-                    );
-
-                } finally {
-
-                    vista.setCursor(
-                            Cursor.getDefaultCursor()
-                    );
-                }
-            }
-        };
-
-        trabajador.execute();
-    }
     public void buscar() {
         try {
             Categoria categoria = vista.getCategoriaFiltro();
@@ -198,23 +65,48 @@ public class ProductoControlador {
     }
 
     public void nuevo() {
-        idProductoSeleccionado = null;
-        vista.limpiarFormulario();
-        vista.setModoEdicion(false);
-    }
-
-    public void seleccionarFila() {
-        int filaModelo = vista.getFilaSeleccionadaModelo();
-
-        if (filaModelo < 0 || filaModelo >= productos.size()) {
+        if (!confirmarDescartarCambios()) {
+            restaurarSeleccionActual();
             return;
         }
 
-        Producto producto = productos.get(filaModelo);
-        idProductoSeleccionado = producto.getIdProducto();
+        idProductoSeleccionado = null;
+
+        vista.limpiarFormulario();
+        vista.setModoEdicion(false);
+
+        actualizarFirmaFormularioBase();
+    }
+
+    public void seleccionarFila() {
+        if (ignorandoSeleccion) {
+            return;
+        }
+
+        int filaModelo =
+                vista.getFilaSeleccionadaModelo();
+
+        if (filaModelo < 0
+                || filaModelo >= productos.size()) {
+
+            return;
+        }
+
+        Producto producto =
+                productos.get(filaModelo);
+
+        if (!confirmarDescartarCambios()) {
+            restaurarSeleccionActual();
+            return;
+        }
+
+        idProductoSeleccionado =
+                producto.getIdProducto();
 
         vista.mostrarProducto(producto);
         vista.setModoEdicion(true);
+
+        actualizarFirmaFormularioBase();
     }
 
     public void guardar() {
@@ -261,6 +153,8 @@ public class ProductoControlador {
                         JOptionPane.INFORMATION_MESSAGE
                 );
             }
+
+            actualizarFirmaFormularioBase();
 
             buscar();
             seleccionarProductoEnTabla(idProductoSeleccionado);
@@ -416,11 +310,98 @@ public class ProductoControlador {
         }
     }
 
-    private void seleccionarProductoEnTabla(int idProducto) {
-        for (int i = 0; i < productos.size(); i++) {
-            if (productos.get(i).getIdProducto() == idProducto) {
-                vista.seleccionarFilaModelo(i);
-                seleccionarFila();
+    private void actualizarFirmaFormularioBase() {
+        firmaFormularioBase =
+                vista.firmaFormulario();
+    }
+
+    private boolean hayCambiosSinGuardar() {
+        if (firmaFormularioBase == null) {
+            return false;
+        }
+
+        return !firmaFormularioBase.equals(
+                vista.firmaFormulario()
+        );
+    }
+
+    private boolean confirmarDescartarCambios() {
+        if (!hayCambiosSinGuardar()) {
+            return true;
+        }
+
+        int respuesta =
+                JOptionPane.showConfirmDialog(
+                        vista,
+                        "Hay cambios sin guardar.\\n\\n"
+                        + "¿Deseas descartar los cambios?",
+                        "Descartar cambios",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+        return respuesta
+                == JOptionPane.YES_OPTION;
+    }
+
+    private void restaurarSeleccionActual() {
+        ignorandoSeleccion = true;
+
+        try {
+            if (idProductoSeleccionado == null) {
+                vista.limpiarSeleccionTabla();
+                return;
+            }
+
+            for (int i = 0;
+                    i < productos.size();
+                    i++) {
+
+                if (productos.get(i)
+                        .getIdProducto()
+                        == idProductoSeleccionado) {
+
+                    vista.seleccionarFilaModelo(i);
+                    return;
+                }
+            }
+
+            vista.limpiarSeleccionTabla();
+
+        } finally {
+            ignorandoSeleccion = false;
+        }
+    }
+
+    private void seleccionarProductoEnTabla(
+            int idProducto) {
+
+        for (int i = 0;
+                i < productos.size();
+                i++) {
+
+            if (productos.get(i)
+                    .getIdProducto()
+                    == idProducto) {
+
+                ignorandoSeleccion = true;
+
+                try {
+                    vista.seleccionarFilaModelo(i);
+                } finally {
+                    ignorandoSeleccion = false;
+                }
+
+                Producto producto =
+                        productos.get(i);
+
+                idProductoSeleccionado =
+                        producto.getIdProducto();
+
+                vista.mostrarProducto(producto);
+                vista.setModoEdicion(true);
+
+                actualizarFirmaFormularioBase();
                 break;
             }
         }
