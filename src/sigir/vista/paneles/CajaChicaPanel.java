@@ -438,7 +438,7 @@ public class CajaChicaPanel extends javax.swing.JPanel {
 
         setBackground(new java.awt.Color(247, 249, 252));
         setMinimumSize(new java.awt.Dimension(1080, 700));
-        setPreferredSize(new java.awt.Dimension(1140, 750));
+        setPreferredSize(new java.awt.Dimension(1120, 750));
         setLayout(null);
 
         lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
@@ -560,19 +560,19 @@ public class CajaChicaPanel extends javax.swing.JPanel {
         lblReposicion.setBounds(16, 66, 280, 22);
         btnReponer.setText("Reponer hasta L 2,500");
         pnlControl.add(btnReponer);
-        btnReponer.setBounds(320, 42, 190, 40);
+        btnReponer.setBounds(300, 42, 170, 40);
         lblSaldoFisico.setText("Dinero contado");
         pnlControl.add(lblSaldoFisico);
-        lblSaldoFisico.setBounds(530, 18, 120, 18);
+        lblSaldoFisico.setBounds(490, 18, 100, 18);
         pnlControl.add(txtSaldoFisico);
-        txtSaldoFisico.setBounds(530, 40, 130, 34);
+        txtSaldoFisico.setBounds(490, 40, 105, 34);
         btnArqueo.setText("Guardar arqueo");
         pnlControl.add(btnArqueo);
-        btnArqueo.setBounds(672, 40, 135, 34);
+        btnArqueo.setBounds(605, 40, 95, 34);
         lblArqueoAyuda.setForeground(new java.awt.Color(98, 124, 159));
         lblArqueoAyuda.setText("El arqueo compara el saldo de SIGIR con el dinero físico.");
         pnlControl.add(lblArqueoAyuda);
-        lblArqueoAyuda.setBounds(530, 78, 330, 20);
+        lblArqueoAyuda.setBounds(490, 78, 210, 20);
         add(pnlControl);
         pnlControl.setBounds(390, 174, 716, 112);
 
@@ -584,29 +584,29 @@ public class CajaChicaPanel extends javax.swing.JPanel {
         lblHistorialTitulo.setBounds(16, 8, 260, 26);
         lblDesde.setText("Desde");
         pnlHistorial.add(lblDesde);
-        lblDesde.setBounds(306, 10, 60, 18);
+        lblDesde.setBounds(16, 42, 45, 18);
         pnlHistorial.add(txtDesde);
-        txtDesde.setBounds(350, 6, 120, 30);
+        txtDesde.setBounds(65, 36, 110, 30);
         lblHasta.setText("Hasta");
         pnlHistorial.add(lblHasta);
-        lblHasta.setBounds(484, 10, 60, 18);
+        lblHasta.setBounds(190, 42, 45, 18);
         pnlHistorial.add(txtHasta);
-        txtHasta.setBounds(526, 6, 120, 30);
+        txtHasta.setBounds(235, 36, 110, 30);
         btnActualizar.setText("Actualizar");
         pnlHistorial.add(btnActualizar);
-        btnActualizar.setBounds(658, 6, 100, 30);
+        btnActualizar.setBounds(360, 36, 100, 30);
         lblCantidad.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidad.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         lblCantidad.setText("0 movimientos mostrados");
         pnlHistorial.add(lblCantidad);
-        lblCantidad.setBounds(770, 8, 250, 24);
+        lblCantidad.setBounds(490, 8, 210, 24);
         tblMovimientos.setModel(new javax.swing.table.DefaultTableModel(
             new Object[][]{},
             new String[]{"Fecha", "Tipo", "Categoría", "Concepto", "Monto", "Saldo", "Usuario", "Comprobante"}
         ));
         scrollMovimientos.setViewportView(tblMovimientos);
         pnlHistorial.add(scrollMovimientos);
-        scrollMovimientos.setBounds(0, 46, 716, 258);
+        scrollMovimientos.setBounds(0, 76, 716, 228);
         add(pnlHistorial);
         pnlHistorial.setBounds(390, 298, 716, 310);
     }// </editor-fold>//GEN-END:initComponents

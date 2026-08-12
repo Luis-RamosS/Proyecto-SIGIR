@@ -179,7 +179,7 @@ public class ReparacionesPanel extends JPanel {
         pnlTarjetaListos=tarjeta("Listos para entregar");lblListosTitulo=(JLabel)pnlTarjetaListos.getComponent(0);lblListosValor=(JLabel)pnlTarjetaListos.getComponent(1);lblListosValor.setForeground(new Color(34,155,85));
         tabsReparaciones=new JTabbedPane();crearNuevaOrden();crearSeguimiento();crearRepuestos();crearHistorial();
         setBackground(new Color(247,249,252));setMinimumSize(new java.awt.Dimension(1080,700));setPreferredSize(new java.awt.Dimension(1180,760));setLayout(null);
-        add(pnlEncabezado);pnlEncabezado.setBounds(28,10,1100,76);add(pnlTarjetaRecibidos);pnlTarjetaRecibidos.setBounds(28,88,330,100);add(pnlTarjetaReparacion);pnlTarjetaReparacion.setBounds(372,88,330,100);add(pnlTarjetaListos);pnlTarjetaListos.setBounds(716,88,330,100);add(tabsReparaciones);tabsReparaciones.setBounds(28,198,1070,570);
+        add(pnlEncabezado);pnlEncabezado.setBounds(28,10,1100,76);add(pnlTarjetaRecibidos);pnlTarjetaRecibidos.setBounds(28,88,330,100);add(pnlTarjetaReparacion);pnlTarjetaReparacion.setBounds(372,88,330,100);add(pnlTarjetaListos);pnlTarjetaListos.setBounds(716,88,330,100);add(tabsReparaciones);tabsReparaciones.setBounds(28,198,1135,570);
     }// </editor-fold>//GEN-END:initComponents
 
     private void crearNuevaOrden(){

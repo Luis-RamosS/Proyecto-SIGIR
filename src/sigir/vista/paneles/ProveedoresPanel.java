@@ -225,13 +225,13 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                 SwingConstants.CENTER
         );
 
-        if (tblProveedores.getColumnCount() >= 7) {
+        if (tblProveedores.getColumnCount() >= 8) {
             tblProveedores.getColumnModel()
                     .getColumn(0)
                     .setCellRenderer(centro);
 
             tblProveedores.getColumnModel()
-                    .getColumn(6)
+                    .getColumn(7)
                     .setCellRenderer(centro);
         }
     }
@@ -325,6 +325,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                             "Contacto",
                             "Teléfono",
                             "Correo",
+                            "Dirección",
                             "Estado"
                         },
                         0
@@ -359,6 +360,7 @@ public class ProveedoresPanel extends javax.swing.JPanel {
                 texto(proveedor.getNombreContacto()),
                 texto(proveedor.getTelefono()),
                 texto(proveedor.getCorreo()),
+                texto(proveedor.getDireccion()),
                 proveedor.getEstado()
             });
         }
@@ -372,33 +374,37 @@ public class ProveedoresPanel extends javax.swing.JPanel {
             );
         }
 
-        if (tblProveedores.getColumnCount() >= 7) {
+        if (tblProveedores.getColumnCount() >= 8) {
             tblProveedores.getColumnModel()
                     .getColumn(0)
                     .setPreferredWidth(85);
 
             tblProveedores.getColumnModel()
                     .getColumn(1)
-                    .setPreferredWidth(190);
+                    .setPreferredWidth(175);
 
             tblProveedores.getColumnModel()
                     .getColumn(2)
-                    .setPreferredWidth(130);
+                    .setPreferredWidth(120);
 
             tblProveedores.getColumnModel()
                     .getColumn(3)
-                    .setPreferredWidth(145);
+                    .setPreferredWidth(130);
 
             tblProveedores.getColumnModel()
                     .getColumn(4)
-                    .setPreferredWidth(100);
+                    .setPreferredWidth(95);
 
             tblProveedores.getColumnModel()
                     .getColumn(5)
-                    .setPreferredWidth(185);
+                    .setPreferredWidth(170);
 
             tblProveedores.getColumnModel()
                     .getColumn(6)
+                    .setPreferredWidth(220);
+
+            tblProveedores.getColumnModel()
+                    .getColumn(7)
                     .setPreferredWidth(80);
         }
 

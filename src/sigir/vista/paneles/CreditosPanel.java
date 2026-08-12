@@ -651,17 +651,12 @@ public class CreditosPanel extends javax.swing.JPanel {
         setPreferredSize(new java.awt.Dimension(1180, 760));
         setLayout(null);
 
-        pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
-        lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
         lblTitulo.setText("Gestión de Créditos y Abonos");
         pnlEncabezado.add(lblTitulo);
         lblTitulo.setBounds(0, 4, 520, 40);
 
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14));
-        lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
         lblSubtitulo.setText("Administra los créditos otorgados y registra sus abonos.");
         pnlEncabezado.add(lblSubtitulo);
         lblSubtitulo.setBounds(0, 46, 650, 24);
@@ -669,50 +664,49 @@ public class CreditosPanel extends javax.swing.JPanel {
         add(pnlEncabezado);
         pnlEncabezado.setBounds(28, 10, 1100, 76);
 
-        pnlTarjetaPendientes.setBackground(new java.awt.Color(255, 255, 255));
         pnlTarjetaPendientes.setLayout(null);
+
         lblPendientesTitulo.setText("Créditos pendientes");
         pnlTarjetaPendientes.add(lblPendientesTitulo);
         lblPendientesTitulo.setBounds(18, 18, 180, 20);
-        lblPendientesValor.setFont(new java.awt.Font("Segoe UI", 1, 28));
+
         lblPendientesValor.setText("0");
         pnlTarjetaPendientes.add(lblPendientesValor);
         lblPendientesValor.setBounds(18, 48, 120, 40);
+
         add(pnlTarjetaPendientes);
         pnlTarjetaPendientes.setBounds(28, 90, 330, 105);
 
-        pnlTarjetaVencidos.setBackground(new java.awt.Color(255, 255, 255));
         pnlTarjetaVencidos.setLayout(null);
+
         lblVencidosTitulo.setText("Créditos vencidos");
         pnlTarjetaVencidos.add(lblVencidosTitulo);
         lblVencidosTitulo.setBounds(18, 18, 180, 20);
-        lblVencidosValor.setFont(new java.awt.Font("Segoe UI", 1, 28));
-        lblVencidosValor.setForeground(new java.awt.Color(192, 52, 52));
+
         lblVencidosValor.setText("0");
         pnlTarjetaVencidos.add(lblVencidosValor);
         lblVencidosValor.setBounds(18, 48, 120, 40);
+
         add(pnlTarjetaVencidos);
         pnlTarjetaVencidos.setBounds(372, 90, 330, 105);
 
-        pnlTarjetaPagados.setBackground(new java.awt.Color(255, 255, 255));
         pnlTarjetaPagados.setLayout(null);
+
         lblPagadosTitulo.setText("Créditos pagados");
         pnlTarjetaPagados.add(lblPagadosTitulo);
         lblPagadosTitulo.setBounds(18, 18, 180, 20);
-        lblPagadosValor.setFont(new java.awt.Font("Segoe UI", 1, 28));
-        lblPagadosValor.setForeground(new java.awt.Color(34, 155, 85));
+
         lblPagadosValor.setText("0");
         pnlTarjetaPagados.add(lblPagadosValor);
         lblPagadosValor.setBounds(18, 48, 120, 40);
+
         add(pnlTarjetaPagados);
         pnlTarjetaPagados.setBounds(716, 90, 330, 105);
 
-        pnlGestion.setBackground(new java.awt.Color(247, 249, 252));
         pnlGestion.setLayout(null);
 
-        pnlCreditos.setBackground(new java.awt.Color(255, 255, 255));
         pnlCreditos.setLayout(null);
-        lblTituloCreditos.setFont(new java.awt.Font("Segoe UI", 1, 16));
+
         lblTituloCreditos.setText("Créditos registrados");
         pnlCreditos.add(lblTituloCreditos);
         lblTituloCreditos.setBounds(16, 8, 220, 26);
@@ -720,22 +714,21 @@ public class CreditosPanel extends javax.swing.JPanel {
         txtBuscarCredito.setBounds(16, 42, 260, 34);
         pnlCreditos.add(cmbEstadoCredito);
         cmbEstadoCredito.setBounds(288, 42, 145, 34);
+
         btnEstadoCuenta.setText("Estado de cuenta");
         pnlCreditos.add(btnEstadoCuenta);
         btnEstadoCuenta.setBounds(445, 42, 150, 34);
-        tblCreditos.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
-            new String [] {"Crédito", "Cliente", "Factura", "Inicio", "Vencimiento", "Total", "Saldo", "Cuota", "Estado"}
-        ));
+
         scrollCreditos.setViewportView(tblCreditos);
+
         pnlCreditos.add(scrollCreditos);
         scrollCreditos.setBounds(0, 90, 690, 430);
+
         pnlGestion.add(pnlCreditos);
         pnlCreditos.setBounds(0, 8, 690, 530);
 
-        pnlAbono.setBackground(new java.awt.Color(255, 255, 255));
         pnlAbono.setLayout(null);
-        lblTituloAbono.setFont(new java.awt.Font("Segoe UI", 1, 16));
+
         lblTituloAbono.setText("Registrar abono");
         pnlAbono.add(lblTituloAbono);
         lblTituloAbono.setBounds(16, 8, 190, 26);
@@ -773,6 +766,7 @@ public class CreditosPanel extends javax.swing.JPanel {
         lblMontoAbono.setText("Monto del abono");
         pnlAbono.add(lblMontoAbono);
         lblMontoAbono.setBounds(118, 234, 100, 18);
+
         txtMontoAbono.setText("0.00");
         pnlAbono.add(txtMontoAbono);
         txtMontoAbono.setBounds(118, 254, 94, 34);
@@ -798,9 +792,9 @@ public class CreditosPanel extends javax.swing.JPanel {
         lblObservacionesAbono.setText("Observaciones");
         pnlAbono.add(lblObservacionesAbono);
         lblObservacionesAbono.setBounds(16, 362, 120, 18);
-        txtObservacionesAbono.setColumns(20);
-        txtObservacionesAbono.setRows(5);
+
         scrollObservacionesAbono.setViewportView(txtObservacionesAbono);
+
         pnlAbono.add(scrollObservacionesAbono);
         scrollObservacionesAbono.setBounds(16, 382, 310, 78);
 
@@ -811,27 +805,25 @@ public class CreditosPanel extends javax.swing.JPanel {
         pnlGestion.add(pnlAbono);
         pnlAbono.setBounds(704, 8, 345, 530);
 
-        tabsCreditos.addTab("Gestión de créditos", pnlGestion);
+        tabsCreditos.addTab("tab1", pnlGestion);
 
-        pnlHistorial.setBackground(new java.awt.Color(255, 255, 255));
         pnlHistorial.setLayout(null);
-        lblTituloHistorial.setFont(new java.awt.Font("Segoe UI", 1, 16));
+
         lblTituloHistorial.setText("Historial de abonos");
         pnlHistorial.add(lblTituloHistorial);
         lblTituloHistorial.setBounds(16, 10, 220, 26);
         pnlHistorial.add(txtBuscarAbono);
         txtBuscarAbono.setBounds(16, 44, 300, 34);
-        tblAbonos.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {},
-            new String [] {"Abono", "Crédito", "Fecha", "Cliente", "Factura", "Monto", "Método", "Referencia", "Usuario"}
-        ));
+
         scrollAbonos.setViewportView(tblAbonos);
+
         pnlHistorial.add(scrollAbonos);
         scrollAbonos.setBounds(0, 92, 1049, 445);
-        tabsCreditos.addTab("Historial de abonos", pnlHistorial);
+
+        tabsCreditos.addTab("tab2", pnlHistorial);
 
         add(tabsCreditos);
-        tabsCreditos.setBounds(28, 205, 1070, 565);
+        tabsCreditos.setBounds(28, 205, 1070, 620);
     }// </editor-fold>//GEN-END:initComponents
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

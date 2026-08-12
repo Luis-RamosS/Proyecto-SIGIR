@@ -401,14 +401,22 @@ public class ProveedorControlador {
                 );
             }
 
-            actualizarFirmaFormularioBase();
-
-            idPendienteSeleccionar =
-                    idProveedorSeleccionado;
-
-            buscar();
-
             if (esNuevo) {
+                // Después de registrar un proveedor nuevo,
+                // el formulario vuelve a quedar limpio.
+                idProveedorSeleccionado = null;
+                estadoProveedorSeleccionado = null;
+                idPendienteSeleccionar = null;
+
+                vista.limpiarFormulario();
+                vista.setModoEdicion(
+                        false,
+                        null
+                );
+
+                actualizarFirmaFormularioBase();
+                buscar();
+
                 int respuesta =
                         JOptionPane.showConfirmDialog(
                                 vista,
@@ -427,6 +435,14 @@ public class ProveedorControlador {
                             proveedor
                     );
                 }
+
+            } else {
+                actualizarFirmaFormularioBase();
+
+                idPendienteSeleccionar =
+                        idProveedorSeleccionado;
+
+                buscar();
             }
 
         } catch (IllegalArgumentException ex) {
