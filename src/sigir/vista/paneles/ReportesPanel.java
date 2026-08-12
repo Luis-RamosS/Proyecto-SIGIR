@@ -1,8 +1,12 @@
 package sigir.vista.paneles;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -13,6 +17,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import javax.swing.RowFilter;
@@ -27,7 +34,6 @@ import sigir.modelo.ResumenReportes;
 import sigir.modelo.TipoReporte;
 import sigir.modelo.UsuarioFiltro;
 import sigir.util.FiltroTiempoReal;
-import sigir.util.SelectorFechaUtil;
 
 public class ReportesPanel extends javax.swing.JPanel {
 
@@ -49,6 +55,8 @@ public class ReportesPanel extends javax.swing.JPanel {
 
     private boolean iniciado;
     private boolean actualizandoControles;
+    private CajaChicaPanel cajaChicaPanel;
+    private JTabbedPane tabsModuloReportes;
 
     public ReportesPanel() {
         initComponents();
@@ -65,20 +73,58 @@ public class ReportesPanel extends javax.swing.JPanel {
                 this::filtrarResultadosLocales
         );
 
+        instalarPestanasModulo();
     }
 
     public void activar() {
         if (!iniciado) {
             iniciado = true;
             controlador.iniciarAsync();
+            cajaChicaPanel.activar();
             return;
         }
 
         controlador.recargarSiNecesario();
+        cajaChicaPanel.recargar();
     }
 
     public void recargar() {
         controlador.recargarAsync();
+        cajaChicaPanel.recargar();
+    }
+
+    private void instalarPestanasModulo() {
+        Component[] componentesOriginales = getComponents();
+        Dimension tamanoOriginal = getPreferredSize();
+
+        JPanel pnlReportesGenerales = new JPanel(null);
+        pnlReportesGenerales.setBackground(getBackground());
+        pnlReportesGenerales.setPreferredSize(tamanoOriginal);
+
+        for (Component componente : componentesOriginales) {
+            Rectangle posicion = componente.getBounds();
+            remove(componente);
+            pnlReportesGenerales.add(componente);
+            componente.setBounds(posicion);
+        }
+
+        JScrollPane scrollReportes = new JScrollPane(pnlReportesGenerales);
+        scrollReportes.setBorder(null);
+        scrollReportes.getVerticalScrollBar().setUnitIncrement(18);
+
+        cajaChicaPanel = new CajaChicaPanel();
+        JScrollPane scrollCaja = new JScrollPane(cajaChicaPanel);
+        scrollCaja.setBorder(null);
+        scrollCaja.getVerticalScrollBar().setUnitIncrement(18);
+
+        tabsModuloReportes = new JTabbedPane();
+        tabsModuloReportes.addTab("Reportes generales", scrollReportes);
+        tabsModuloReportes.addTab("Caja chica", scrollCaja);
+
+        setLayout(new BorderLayout());
+        add(tabsModuloReportes, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     private void configurarComponentes() {
@@ -95,9 +141,6 @@ public class ReportesPanel extends javax.swing.JPanel {
         txtFechaHasta.setText(
                 hoy.format(FORMATO_FECHA)
         );
-
-        SelectorFechaUtil.instalar(txtFechaDesde, false);
-        SelectorFechaUtil.instalar(txtFechaHasta, false);
 
         txtDescripcionReporte.setEditable(false);
         txtDescripcionReporte.setFocusable(false);

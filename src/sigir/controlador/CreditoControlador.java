@@ -255,6 +255,40 @@ public class CreditoControlador {
         vista.mostrarDatosCredito(credito);
     }
 
+    public void seleccionarCreditoDesdeTabla() {
+        int fila = vista.getFilaCreditoSeleccionadaModelo();
+
+        if (fila < 0 || fila >= creditos.size()) {
+            return;
+        }
+
+        Credito credito = creditos.get(fila);
+
+        boolean disponibleParaAbono =
+                credito.getSaldoPendiente() != null
+                && credito.getSaldoPendiente().signum() > 0
+                && !"PAGADO".equalsIgnoreCase(credito.getEstado())
+                && !"ANULADO".equalsIgnoreCase(credito.getEstado());
+
+        if (!disponibleParaAbono) {
+            vista.seleccionarCreditoParaAbono(null);
+            vista.mostrarDatosCredito(credito);
+            return;
+        }
+
+        boolean seleccionado =
+                vista.seleccionarCreditoParaAbono(credito);
+
+        // Aunque el combo todavía se esté actualizando, mostramos
+        // inmediatamente la información de la fila seleccionada.
+        vista.mostrarDatosCredito(credito);
+
+        if (!seleccionado) {
+            // La siguiente recarga volverá a sincronizar el combo.
+            cargarCreditosParaAbono();
+        }
+    }
+
     public void registrarAbono() {
         try {
             if (!Sesion.haySesionActiva()) {

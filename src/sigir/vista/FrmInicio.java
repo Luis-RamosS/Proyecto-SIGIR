@@ -9,6 +9,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.BorderLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.sql.SQLException;
 import javax.swing.JComponent;
 import sigir.vista.paneles.ProductosPanel;
 import sigir.vista.paneles.ClientesPanel;
@@ -22,7 +25,9 @@ import sigir.vista.paneles.ReparacionesPanel;
 import sigir.vista.paneles.UsuariosPanel;
 import sigir.vista.paneles.ReportesPanel;
 import javax.swing.JOptionPane;
+import sigir.util.HorarioVentaRapidaUtil;
 import sigir.util.Sesion;
+import sigir.util.SesionRemota;
 import sigir.vista.paneles.ConfiguracionPanel;
 import sigir.componentes.BuscadorGlobal;
 import sigir.modelo.ModuloInicio;
@@ -52,6 +57,8 @@ public class FrmInicio extends javax.swing.JFrame {
     private UsuariosPanel usuariosPanel;
     private ReportesPanel reportesPanel;
     private ConfiguracionPanel configuracionPanel;
+    private javax.swing.Timer timerHorarioVentaRapida;
+    private javax.swing.Timer timerHeartbeatSesion;
     
     private void limpiarCuadrosDelMenu() {
 
@@ -106,6 +113,8 @@ public class FrmInicio extends javax.swing.JFrame {
 
         configurarNavegacion();
         configurarPermisos();
+        configurarHorarioVentaRapida();
+        configurarControlSesionRemota();
         configurarBusquedaGlobal();
 
         javax.swing.SwingUtilities.invokeLater(() -> {
@@ -148,7 +157,9 @@ public class FrmInicio extends javax.swing.JFrame {
 
 
     private void preguntarVentaRapida() {
-        if (!Sesion.haySesionActiva() || !Sesion.esDueno()) {
+        if (!Sesion.haySesionActiva()
+                || !Sesion.esDueno()
+                || !HorarioVentaRapidaUtil.estaHabilitadaAhora()) {
             return;
         }
 
@@ -168,6 +179,108 @@ public class FrmInicio extends javax.swing.JFrame {
     private void configurarVentana() {
         setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
+    }
+
+    private void configurarHorarioVentaRapida() {
+        actualizarDisponibilidadVentaRapida();
+
+        timerHorarioVentaRapida = new javax.swing.Timer(
+                5000,
+                e -> actualizarDisponibilidadVentaRapida()
+        );
+        timerHorarioVentaRapida.start();
+    }
+
+    private void actualizarDisponibilidadVentaRapida() {
+        boolean dueno = Sesion.haySesionActiva() && Sesion.esDueno();
+        boolean horario = HorarioVentaRapidaUtil.estaHabilitadaAhora();
+
+        btnVentaRapida.setVisible(dueno);
+        btnVentaRapida.setEnabled(dueno && horario);
+        btnVentaRapida.setToolTipText(
+                horario
+                        ? "Registrar ventas realizadas fuera del horario normal"
+                        : "Disponible únicamente de "
+                        + HorarioVentaRapidaUtil.descripcionHorario()
+        );
+
+        if (ventaRapidaPanel != null) {
+            ventaRapidaPanel.actualizarEstadoHorario();
+        }
+    }
+
+    private void configurarControlSesionRemota() {
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                salirAplicacion();
+            }
+        });
+
+        if (!SesionRemota.haySesion()) {
+            return;
+        }
+
+        timerHeartbeatSesion = new javax.swing.Timer(30000, e -> {
+            try {
+                if (!SesionRemota.refrescar()) {
+                    cerrarPorSesionNoValida();
+                }
+            } catch (SQLException ex) {
+                System.err.println(
+                        "No fue posible actualizar el heartbeat de sesión: "
+                        + ex.getMessage()
+                );
+            }
+        });
+        timerHeartbeatSesion.start();
+    }
+
+    private void cerrarPorSesionNoValida() {
+        detenerTimers();
+        JOptionPane.showMessageDialog(
+                this,
+                "La sesión de este usuario dejó de estar activa en el servidor.\n"
+                + "Por seguridad, SIGIR volverá al inicio de sesión.",
+                "Sesión finalizada",
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        SesionRemota.cerrarSilenciosamente("SESION_REEMPLAZADA");
+        Sesion.cerrar();
+        LoginFrame login = new LoginFrame();
+        login.setVisible(true);
+        dispose();
+    }
+
+    private void salirAplicacion() {
+        int respuesta = JOptionPane.showConfirmDialog(
+                this,
+                "¿Deseas salir de SIGIR?",
+                "Salir",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (respuesta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        detenerTimers();
+        SesionRemota.cerrarSilenciosamente("CIERRE_APLICACION");
+        Sesion.cerrar();
+        dispose();
+        System.exit(0);
+    }
+
+    private void detenerTimers() {
+        if (timerHorarioVentaRapida != null) {
+            timerHorarioVentaRapida.stop();
+        }
+        if (timerHeartbeatSesion != null) {
+            timerHeartbeatSesion.stop();
+        }
     }
     private void configurarBotonCerrarSesion() {
 
@@ -558,6 +671,19 @@ public class FrmInicio extends javax.swing.JFrame {
         });
 
         btnVentaRapida.addActionListener(e -> {
+            if (!HorarioVentaRapidaUtil.estaHabilitadaAhora()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "La venta rápida está disponible únicamente de "
+                        + HorarioVentaRapidaUtil.descripcionHorario()
+                        + ".",
+                        "Venta rápida no disponible",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                actualizarDisponibilidadVentaRapida();
+                return;
+            }
+
             if (!Sesion.esDueno()) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -776,6 +902,8 @@ public class FrmInicio extends javax.swing.JFrame {
         return;
     }
 
+    detenerTimers();
+    SesionRemota.cerrarSilenciosamente("CIERRE_USUARIO");
     Sesion.cerrar();
 
     LoginFrame login = new LoginFrame();

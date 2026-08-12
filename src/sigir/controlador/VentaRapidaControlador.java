@@ -13,6 +13,7 @@ import javax.swing.SwingWorker;
 import sigir.dao.VentaRapidaDAO;
 import sigir.modelo.Producto;
 import sigir.modelo.VentaRapida;
+import sigir.util.HorarioVentaRapidaUtil;
 import sigir.util.Sesion;
 import sigir.vista.paneles.VentaRapidaPanel;
 
@@ -86,6 +87,13 @@ public class VentaRapidaControlador {
         try {
             if(!Sesion.haySesionActiva()) throw new IllegalStateException("No existe una sesión activa.");
             if(!Sesion.esDueno()) throw new IllegalStateException("Solo el dueño puede registrar ventas rápidas.");
+            if(!HorarioVentaRapidaUtil.estaHabilitadaAhora()) {
+                throw new IllegalStateException(
+                        "Las ventas rápidas solo pueden registrarse de "
+                        + HorarioVentaRapidaUtil.descripcionHorario()
+                        + "."
+                );
+            }
 
             Producto p=vista.getProductoSeleccionado();
             if(p==null || p.getIdProducto()<=0) throw new IllegalArgumentException("Selecciona el producto vendido.");

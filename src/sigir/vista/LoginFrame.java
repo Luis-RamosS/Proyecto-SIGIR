@@ -34,9 +34,11 @@ import sigir.util.Colores;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import sigir.dao.SesionActivaDAO;
 import sigir.dao.UsuarioDAO;
 import sigir.modelo.Usuario;
 import sigir.util.Sesion;
+import sigir.util.SesionRemota;
 
 public class LoginFrame extends JFrame {
 
@@ -294,17 +296,13 @@ public class LoginFrame extends JFrame {
         lblOlvido.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-
-                FrmRecuperarContrasena formularioRecuperacion
-                        = new FrmRecuperarContrasena(LoginFrame.this);
-
-                formularioRecuperacion.setLocationRelativeTo(
-                        LoginFrame.this
+                JOptionPane.showMessageDialog(
+                        LoginFrame.this,
+                        "La recuperación de contraseña se conectará "
+                        + "más adelante con la base de datos.",
+                        "Recuperar contraseña",
+                        JOptionPane.INFORMATION_MESSAGE
                 );
-
-                formularioRecuperacion.setVisible(true);
-
-                LoginFrame.this.setVisible(false);
             }
         });
 
@@ -423,6 +421,12 @@ public class LoginFrame extends JFrame {
                 return;
             }
 
+            SesionActivaDAO sesionActivaDAO = new SesionActivaDAO();
+            String tokenSesion = sesionActivaDAO.abrirSesion(
+                    usuarioAutenticado.getIdUsuario()
+            );
+
+            SesionRemota.iniciar(tokenSesion);
             Sesion.iniciar(usuarioAutenticado);
 
             FrmInicio inicio = new FrmInicio(

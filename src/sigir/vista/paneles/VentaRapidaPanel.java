@@ -15,7 +15,9 @@ import java.util.List;
 import java.util.Locale;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JLabel;
 import javax.swing.JSpinner;
+import javax.swing.Timer;
 import javax.swing.SpinnerDateModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
@@ -27,6 +29,7 @@ import sigir.controlador.VentaRapidaControlador;
 import sigir.modelo.Producto;
 import sigir.modelo.VentaRapida;
 import sigir.util.CampoSeleccionUtil;
+import sigir.util.HorarioVentaRapidaUtil;
 import sigir.util.SelectorFechaUtil;
 
 public class VentaRapidaPanel extends javax.swing.JPanel {
@@ -38,6 +41,9 @@ public class VentaRapidaPanel extends javax.swing.JPanel {
     private BuscadorSugerencias<Producto> buscadorProductos;
     private Producto productoSeleccionado;
     private boolean iniciado;
+    private boolean procesando;
+    private JLabel lblHorario;
+    private Timer timerHorario;
 
     public VentaRapidaPanel() {
         initComponents();
@@ -46,9 +52,11 @@ public class VentaRapidaPanel extends javax.swing.JPanel {
         configurarBuscador();
         configurarEventos();
         aplicarEstilos();
+        configurarHorario();
     }
 
     public void activar() {
+        actualizarEstadoHorario();
         if(!iniciado) {
             iniciado=true;
             controlador.iniciarAsync();
@@ -86,6 +94,43 @@ public class VentaRapidaPanel extends javax.swing.JPanel {
                 p -> p==null?"":p.getCodigo()+" — "+p.getNombre()+" | Stock: "+p.getStockActual(),
                 p -> p==null?"":seguro(p.getCodigo())+" "+seguro(p.getNombre())+" "+seguro(p.getMarca())+" "+seguro(p.getModelo())+" "+seguro(p.getDescripcion()),
                 p -> { productoSeleccionado=p; controlador.seleccionarProducto(); }
+        );
+    }
+
+    private void configurarHorario() {
+        lblHorario = new JLabel();
+        lblHorario.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        add(lblHorario);
+        lblHorario.setBounds(690, 18, 438, 28);
+
+        timerHorario = new Timer(5000, e -> actualizarEstadoHorario());
+        timerHorario.start();
+        actualizarEstadoHorario();
+    }
+
+    public void actualizarEstadoHorario() {
+        boolean habilitada = HorarioVentaRapidaUtil.estaHabilitadaAhora();
+
+        lblHorario.setText(
+                habilitada
+                        ? "Disponible ahora · Horario: "
+                        + HorarioVentaRapidaUtil.descripcionHorario()
+                        : "No disponible · Horario: "
+                        + HorarioVentaRapidaUtil.descripcionHorario()
+        );
+
+        lblHorario.setForeground(
+                habilitada
+                        ? new Color(34, 155, 85)
+                        : new Color(196, 74, 74)
+        );
+
+        btnRegistrar.setEnabled(habilitada && !procesando);
+        btnRegistrar.setToolTipText(
+                habilitada
+                        ? "Registrar una venta rápida"
+                        : "Las ventas rápidas solo se registran de "
+                        + HorarioVentaRapidaUtil.descripcionHorario()
         );
     }
 
@@ -158,7 +203,10 @@ public class VentaRapidaPanel extends javax.swing.JPanel {
     }
 
     public void establecerProcesando(boolean procesando) {
-        btnRegistrar.setEnabled(!procesando);btnActualizar.setEnabled(!procesando);btnRegistrar.setText(procesando?"Procesando...":"Registrar venta rápida");
+        this.procesando = procesando;
+        btnActualizar.setEnabled(!procesando);
+        btnRegistrar.setText(procesando ? "Procesando..." : "Registrar venta rápida");
+        actualizarEstadoHorario();
     }
 
     public void mostrarHistorial(List<VentaRapida> ventas) {

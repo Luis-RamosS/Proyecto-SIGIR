@@ -203,6 +203,13 @@ public class CreditosPanel extends javax.swing.JPanel {
             }
         });
 
+        tblCreditos.getSelectionModel()
+                .addListSelectionListener(e -> {
+                    if (!e.getValueIsAdjusting()) {
+                        controlador.seleccionarCreditoDesdeTabla();
+                    }
+                });
+
         btnRegistrarAbono.addActionListener(
                 e -> controlador.registrarAbono()
         );
@@ -325,6 +332,41 @@ public class CreditosPanel extends javax.swing.JPanel {
         }
 
         controlador.seleccionarCredito();
+    }
+
+    public boolean seleccionarCreditoParaAbono(
+            Credito objetivo) {
+
+        actualizandoControles = true;
+
+        try {
+            if (objetivo == null) {
+                cmbCreditoAbono.setSelectedIndex(0);
+                return false;
+            }
+
+            for (int i = 0;
+                    i < cmbCreditoAbono.getItemCount();
+                    i++) {
+
+                Credito credito =
+                        cmbCreditoAbono.getItemAt(i);
+
+                if (credito != null
+                        && credito.getIdCredito()
+                        == objetivo.getIdCredito()) {
+
+                    cmbCreditoAbono.setSelectedIndex(i);
+                    return true;
+                }
+            }
+
+            cmbCreditoAbono.setSelectedIndex(0);
+            return false;
+
+        } finally {
+            actualizandoControles = false;
+        }
     }
 
     public Credito getCreditoSeleccionadoParaAbono() {
