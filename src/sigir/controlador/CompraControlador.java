@@ -15,6 +15,9 @@ import java.util.concurrent.ExecutionException;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import sigir.dao.CompraDAO;
+import sigir.dao.CategoriaDAO;
+import sigir.dao.ProductoDAO;
+import sigir.modelo.Categoria;
 import sigir.modelo.Compra;
 import sigir.modelo.DetalleCompra;
 import sigir.modelo.Producto;
@@ -26,6 +29,8 @@ public class CompraControlador {
 
     private final ComprasPanel vista;
     private final CompraDAO compraDAO;
+    private final ProductoDAO productoDAO;
+    private final CategoriaDAO categoriaDAO;
 
     private final List<DetalleCompra> detalles =
             new ArrayList<>();
@@ -64,6 +69,8 @@ public class CompraControlador {
     public CompraControlador(ComprasPanel vista) {
         this.vista = vista;
         this.compraDAO = new CompraDAO();
+        this.productoDAO = new ProductoDAO();
+        this.categoriaDAO = new CategoriaDAO();
     }
 
     public void iniciarAsync() {
@@ -257,6 +264,115 @@ public class CompraControlador {
 
         vista.establecerProductoSeleccionado(
                 seleccionado
+        );
+
+        seleccionarProducto();
+    }
+
+    public void registrarProductoNuevo() {
+        try {
+            List<Categoria> categorias =
+                    categoriaDAO.listarActivas();
+
+            if (categorias.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        vista,
+                        "No existen categorías activas para registrar el producto.",
+                        "Categorías no disponibles",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            Producto producto =
+                    vista.solicitarNuevoProducto(categorias);
+
+            if (producto == null) {
+                return;
+            }
+
+            validarProductoNuevo(producto);
+
+            if (productoDAO.existeCodigo(
+                    producto.getCodigo(),
+                    null
+            )) {
+                throw new IllegalArgumentException(
+                        "Ya existe un producto con el código "
+                        + producto.getCodigo() + "."
+                );
+            }
+
+            /*
+             * El producto se crea sin existencias. La cantidad real entra
+             * al inventario únicamente cuando se guarda esta compra.
+             */
+            producto.setEstado("AGOTADO");
+            producto.setStockActual(0);
+
+            int idProducto =
+                    productoDAO.insertar(producto);
+
+            Producto guardado =
+                    productoDAO.buscarPorId(idProducto);
+
+            if (guardado == null) {
+                throw new SQLException(
+                        "El producto se registró, pero no pudo volver a cargarse."
+                );
+            }
+
+            productosDisponibles =
+                    new ArrayList<>(
+                            compraDAO.listarProductosDisponibles()
+                    );
+
+            vista.establecerProductoSeleccionado(guardado);
+            seleccionarProducto();
+
+            JOptionPane.showMessageDialog(
+                    vista,
+                    "Producto registrado correctamente.\n\n"
+                    + "Ahora indica la cantidad comprada y presiona Agregar.",
+                    "Producto listo para la compra",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(
+                    vista,
+                    ex.getMessage(),
+                    "Producto no registrado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+        } catch (SQLException ex) {
+            mostrarErrorBaseDatos(
+                    "No fue posible registrar el producto nuevo.",
+                    ex
+            );
+        }
+    }
+
+    public void usarProductoRegistrado(
+            Producto producto) {
+
+        if (producto == null
+                || producto.getIdProducto() <= 0) {
+
+            return;
+        }
+
+        productosDisponibles.removeIf(
+                existente ->
+                        existente.getIdProducto()
+                        == producto.getIdProducto()
+        );
+
+        productosDisponibles.add(producto);
+
+        vista.establecerProductoSeleccionado(
+                producto
         );
 
         seleccionarProducto();
@@ -751,6 +867,69 @@ public class CompraControlador {
         compra.recalcularTotales();
 
         return compra;
+    }
+
+    private void validarProductoNuevo(Producto producto) {
+        if (producto.getCodigo() == null
+                || producto.getCodigo().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Ingresa el código del producto."
+            );
+        }
+
+        if (producto.getCodigo().trim().length() > 30) {
+            throw new IllegalArgumentException(
+                    "El código no puede superar 30 caracteres."
+            );
+        }
+
+        if (producto.getNombre() == null
+                || producto.getNombre().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Ingresa el nombre del producto."
+            );
+        }
+
+        if (producto.getNombre().trim().length() > 120) {
+            throw new IllegalArgumentException(
+                    "El nombre no puede superar 120 caracteres."
+            );
+        }
+
+        if (producto.getIdCategoria() <= 0) {
+            throw new IllegalArgumentException(
+                    "Selecciona una categoría."
+            );
+        }
+
+        if (producto.getPrecioCompra() == null
+                || producto.getPrecioCompra()
+                        .compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException(
+                    "El precio de compra no puede ser negativo."
+            );
+        }
+
+        if (producto.getPrecioVenta() == null
+                || producto.getPrecioVenta()
+                        .compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException(
+                    "El precio de venta no puede ser negativo."
+            );
+        }
+
+        if (producto.getStockMinimo() < 0) {
+            throw new IllegalArgumentException(
+                    "El stock mínimo no puede ser negativo."
+            );
+        }
+
+        if (producto.getDescripcion() != null
+                && producto.getDescripcion().length() > 2000) {
+            throw new IllegalArgumentException(
+                    "La descripción es demasiado extensa."
+            );
+        }
     }
 
     private void validarCompra(Compra compra) {

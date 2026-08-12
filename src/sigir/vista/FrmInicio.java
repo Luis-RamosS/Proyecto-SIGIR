@@ -33,6 +33,7 @@ import sigir.componentes.BuscadorGlobal;
 import sigir.modelo.ModuloInicio;
 import sigir.modelo.Cliente;
 import sigir.modelo.Proveedor;
+import sigir.modelo.Producto;
 import sigir.vista.paneles.InicioPanel;
 
 /**
@@ -59,6 +60,7 @@ public class FrmInicio extends javax.swing.JFrame {
     private ConfiguracionPanel configuracionPanel;
     private javax.swing.Timer timerHorarioVentaRapida;
     private javax.swing.Timer timerHeartbeatSesion;
+    private boolean productoDesdeCompraPendiente;
     
     private void limpiarCuadrosDelMenu() {
 
@@ -464,6 +466,18 @@ public class FrmInicio extends javax.swing.JFrame {
             javax.swing.JButton boton,
             javax.swing.JComponent panel) {
 
+        if (productoDesdeCompraPendiente
+                && boton != btnProductos) {
+
+            productoDesdeCompraPendiente = false;
+
+            if (productosPanel != null) {
+                productosPanel.setProductoRegistradoListener(
+                        null
+                );
+            }
+        }
+
         marcarBotonActivo(boton);
         mostrarPanel(panel);
     }
@@ -634,6 +648,98 @@ public class FrmInicio extends javax.swing.JFrame {
         );
     }
 
+    private ComprasPanel obtenerComprasPanel() {
+        if (comprasPanel == null) {
+            comprasPanel = new ComprasPanel();
+
+            comprasPanel.setSolicitarNuevoProductoListener(
+                    this::abrirProductosDesdeCompras
+            );
+        }
+
+        return comprasPanel;
+    }
+
+    private ProductosPanel obtenerProductosPanel() {
+        if (productosPanel == null) {
+            productosPanel = new ProductosPanel();
+        }
+
+        return productosPanel;
+    }
+
+    private void abrirProductosDesdeCompras() {
+        ProductosPanel panel =
+                obtenerProductosPanel();
+
+        productoDesdeCompraPendiente = true;
+
+        mostrarModulo(
+                btnProductos,
+                panel
+        );
+
+        panel.activar();
+
+        boolean preparado =
+                panel.prepararNuevoProductoDesdeCompras(
+                        this::productoRegistradoDesdeCompras
+                );
+
+        if (!preparado) {
+            productoDesdeCompraPendiente = false;
+            panel.setProductoRegistradoListener(null);
+        }
+    }
+
+    private void productoRegistradoDesdeCompras(
+            Producto producto) {
+
+        if (!productoDesdeCompraPendiente
+                || producto == null
+                || producto.getIdProducto() <= 0) {
+
+            return;
+        }
+
+        int respuesta =
+                JOptionPane.showConfirmDialog(
+                        this,
+                        "Producto registrado correctamente.\n\n"
+                        + "¿Deseas regresar a Compras y "
+                        + "usar este producto?",
+                        "Regresar a Compras",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE
+                );
+
+        productoDesdeCompraPendiente = false;
+
+        if (productosPanel != null) {
+            productosPanel.setProductoRegistradoListener(
+                    null
+            );
+        }
+
+        if (respuesta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        ComprasPanel panel =
+                obtenerComprasPanel();
+
+        mostrarModulo(
+                btnCompras,
+                panel
+        );
+
+        panel.activar();
+
+        panel.prepararProductoRegistradoDesdeProductos(
+                producto
+        );
+    }
+
     public void abrirCompraConProveedor(
             Proveedor proveedor) {
 
@@ -643,17 +749,16 @@ public class FrmInicio extends javax.swing.JFrame {
             return;
         }
 
-        if (comprasPanel == null) {
-            comprasPanel = new ComprasPanel();
-        }
+        ComprasPanel panel =
+                obtenerComprasPanel();
 
         mostrarModulo(
                 btnCompras,
-                comprasPanel
+                panel
         );
 
-        comprasPanel.activar();
-        comprasPanel.prepararNuevaCompraParaProveedor(
+        panel.activar();
+        panel.prepararNuevaCompraParaProveedor(
                 proveedor
         );
     }
@@ -704,30 +809,28 @@ public class FrmInicio extends javax.swing.JFrame {
 
         btnCompras.addActionListener(e -> {
 
-            if (comprasPanel == null) {
-                comprasPanel = new ComprasPanel();
-            }
+            ComprasPanel panel =
+                    obtenerComprasPanel();
 
             mostrarModulo(
                     btnCompras,
-                    comprasPanel
+                    panel
             );
 
-            comprasPanel.activar();
+            panel.activar();
         });
 
         btnProductos.addActionListener(e -> {
 
-            if (productosPanel == null) {
-                productosPanel = new ProductosPanel();
-            }
+            ProductosPanel panel =
+                    obtenerProductosPanel();
 
             mostrarModulo(
                     btnProductos,
-                    productosPanel
+                    panel
             );
 
-            productosPanel.activar();
+            panel.activar();
         });
 
         btnInventario.addActionListener(e -> {

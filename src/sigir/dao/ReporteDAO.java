@@ -123,6 +123,8 @@ public class ReporteDAO {
                 creditos(desde, hasta, estado);
             case REPARACIONES ->
                 reparaciones(desde, hasta, estado, idUsuario);
+            case CAJA_CHICA ->
+                cajaChica(desde, hasta, estado, idUsuario);
             case ACTIVIDAD_USUARIOS ->
                 actividad(desde, hasta, idUsuario);
         };
@@ -780,6 +782,217 @@ public class ReporteDAO {
 
         r.setValorResumen(BigDecimal.valueOf(cantidad));
         r.setDatosGrafico(graficoTexto(barras));
+        return r;
+    }
+
+    private ReporteResultado cajaChica(
+            LocalDate desde,
+            LocalDate hasta,
+            String movimiento,
+            Integer idUsuario) throws SQLException {
+
+        String filtro = movimiento == null
+                || movimiento.isBlank()
+                || "TODOS".equalsIgnoreCase(movimiento)
+                        ? null
+                        : movimiento.trim().toUpperCase();
+
+        String sql = """
+                WITH movimientos AS
+                (
+                    SELECT
+                        m.id_movimiento,
+                        m.fecha_movimiento,
+                        m.tipo,
+                        m.categoria,
+                        m.concepto,
+                        m.monto,
+                        m.comprobante,
+                        m.observaciones,
+                        m.id_usuario,
+                        u.nombre_completo AS usuario,
+                        m.estado,
+                        SUM(
+                            CASE
+                                WHEN m.estado <> 'ACTIVO'
+                                THEN 0
+                                WHEN m.tipo IN (
+                                    'APERTURA',
+                                    'REPOSICION',
+                                    'AJUSTE_ENTRADA'
+                                )
+                                THEN m.monto
+                                ELSE -m.monto
+                            END
+                        ) OVER (
+                            ORDER BY
+                                m.fecha_movimiento,
+                                m.id_movimiento
+                            ROWS BETWEEN UNBOUNDED PRECEDING
+                                     AND CURRENT ROW
+                        ) AS saldo_posterior
+                    FROM dbo.caja_chica_movimientos AS m
+                    INNER JOIN dbo.usuarios AS u
+                        ON u.id_usuario = m.id_usuario
+                )
+                SELECT
+                    id_movimiento,
+                    fecha_movimiento,
+                    tipo,
+                    categoria,
+                    concepto,
+                    monto,
+                    saldo_posterior,
+                    usuario,
+                    comprobante,
+                    observaciones,
+                    estado
+                FROM movimientos
+                WHERE fecha_movimiento >= ?
+                  AND fecha_movimiento < DATEADD(DAY, 1, ?)
+                  AND
+                  (
+                      ? IS NULL
+                      OR (? = 'ACTIVOS' AND estado = 'ACTIVO')
+                      OR (? = 'ANULADOS' AND estado = 'ANULADO')
+                      OR (
+                          ? NOT IN ('ACTIVOS', 'ANULADOS')
+                          AND tipo = ?
+                      )
+                  )
+                  AND (? IS NULL OR id_usuario = ?)
+                ORDER BY
+                    fecha_movimiento DESC,
+                    id_movimiento DESC;
+                """;
+
+        ReporteResultado r = nuevo(
+                "Movimientos de caja chica",
+                "Control de entradas, egresos, reposiciones y ajustes "
+                + "realizados sobre el fondo de caja chica.",
+                List.of(
+                        "Fecha",
+                        "Movimiento",
+                        "Categoría",
+                        "Concepto",
+                        "Monto",
+                        "Saldo posterior",
+                        "Usuario",
+                        "Comprobante",
+                        "Observaciones",
+                        "Estado"
+                ),
+                "Egresos activos",
+                true
+        );
+
+        Map<LocalDate, BigDecimal> egresosPorFecha =
+                new TreeMap<>();
+
+        BigDecimal totalEgresos =
+                BigDecimal.ZERO;
+
+        try (Connection cn =
+                     ConexionBD.obtenerConexion();
+             PreparedStatement ps =
+                     cn.prepareStatement(sql)) {
+
+            fecha(ps, 1, desde);
+            fecha(ps, 2, hasta);
+
+            if (filtro == null) {
+                for (int i = 3; i <= 7; i++) {
+                    ps.setNull(i, Types.VARCHAR);
+                }
+            } else {
+                for (int i = 3; i <= 7; i++) {
+                    ps.setString(i, filtro);
+                }
+            }
+
+            usuario(ps, 8, 9, idUsuario);
+
+            try (ResultSet rs =
+                         ps.executeQuery()) {
+
+                while (rs.next()) {
+                    Timestamp ts =
+                            rs.getTimestamp(
+                                    "fecha_movimiento"
+                            );
+
+                    LocalDateTime momento =
+                            ts == null
+                                    ? null
+                                    : ts.toLocalDateTime();
+
+                    BigDecimal monto =
+                            seguro(
+                                    rs.getBigDecimal(
+                                            "monto"
+                                    )
+                            );
+
+                    String tipo =
+                            rs.getString("tipo");
+
+                    String estadoMovimiento =
+                            rs.getString("estado");
+
+                    r.agregarFila(
+                            momento,
+                            tipo,
+                            rs.getString("categoria"),
+                            rs.getString("concepto"),
+                            monto,
+                            seguro(
+                                    rs.getBigDecimal(
+                                            "saldo_posterior"
+                                    )
+                            ),
+                            rs.getString("usuario"),
+                            rs.getString("comprobante"),
+                            rs.getString("observaciones"),
+                            estadoMovimiento
+                    );
+
+                    boolean egresoActivo =
+                            "ACTIVO".equalsIgnoreCase(
+                                    estadoMovimiento
+                            )
+                            && (
+                                "EGRESO".equalsIgnoreCase(
+                                        tipo
+                                )
+                                || "AJUSTE_SALIDA"
+                                        .equalsIgnoreCase(
+                                                tipo
+                                        )
+                            );
+
+                    if (egresoActivo) {
+                        totalEgresos =
+                                totalEgresos.add(
+                                        monto
+                                );
+
+                        if (momento != null) {
+                            egresosPorFecha.merge(
+                                    momento.toLocalDate(),
+                                    monto,
+                                    BigDecimal::add
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        r.setValorResumen(totalEgresos);
+        r.setDatosGrafico(
+                graficoFechas(egresosPorFecha)
+        );
+
         return r;
     }
 

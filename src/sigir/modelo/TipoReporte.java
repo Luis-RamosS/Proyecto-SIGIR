@@ -27,6 +27,11 @@ public enum TipoReporte {
     REPARACIONES("REPARACIONES", "Reparaciones",
             "Órdenes de servicio y su estado actual.",
             true, true, true),
+    CAJA_CHICA(
+            "CAJA_CHICA",
+            "Movimientos de caja chica",
+            "Entradas, egresos, reposiciones y ajustes del fondo de caja chica.",
+            true, true, true),
     ACTIVIDAD_USUARIOS(
             "ACTIVIDAD_USUARIOS",
             "Actividad por usuario",

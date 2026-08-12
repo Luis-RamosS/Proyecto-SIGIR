@@ -22,6 +22,8 @@ public class Compra {
     private String tipoPago;
     private String estado;
     private String observaciones;
+    private String resumenProductos = "";
+    private int unidadesHistorial;
     private final List<DetalleCompra> detalles = new ArrayList<>();
 
     public void recalcularTotales() {
@@ -150,6 +152,24 @@ public class Compra {
 
     public void setObservaciones(String observaciones) {
         this.observaciones = observaciones;
+    }
+
+    public String getResumenProductos() {
+        return resumenProductos == null ? "" : resumenProductos;
+    }
+
+    public void setResumenProductos(String resumenProductos) {
+        this.resumenProductos = resumenProductos == null
+                ? ""
+                : resumenProductos;
+    }
+
+    public int getUnidadesHistorial() {
+        return unidadesHistorial;
+    }
+
+    public void setUnidadesHistorial(int unidadesHistorial) {
+        this.unidadesHistorial = Math.max(0, unidadesHistorial);
     }
 
     public List<DetalleCompra> getDetalles() {

@@ -211,18 +211,52 @@ public class CompraDAO {
                        c.id_usuario, u.nombre_completo AS nombre_usuario,
                        c.numero_documento, c.fecha_compra, c.subtotal,
                        c.descuento, c.total, c.tipo_pago, c.estado,
-                       c.observaciones
+                       c.observaciones,
+                       ISNULL(det.unidades_totales, 0) AS unidades_totales,
+                       ISNULL(det.detalle_resumen, N'') AS detalle_resumen
                 FROM dbo.compras AS c
                 INNER JOIN dbo.proveedores AS p
                     ON p.id_proveedor = c.id_proveedor
                 INNER JOIN dbo.usuarios AS u
                     ON u.id_usuario = c.id_usuario
+                OUTER APPLY
+                (
+                    SELECT
+                        SUM(dc2.cantidad) AS unidades_totales,
+                        STRING_AGG(
+                            CAST(
+                                CONCAT(
+                                    pr2.nombre,
+                                    N' x',
+                                    dc2.cantidad
+                                ) AS NVARCHAR(MAX)
+                            ),
+                            N' | '
+                        ) AS detalle_resumen
+                    FROM dbo.detalle_compra AS dc2
+                    INNER JOIN dbo.productos AS pr2
+                        ON pr2.id_producto = dc2.id_producto
+                    WHERE dc2.id_compra = c.id_compra
+                ) AS det
                 WHERE
                     (
                         ? = ''
                         OR ISNULL(c.numero_documento, '') LIKE '%' + ? + '%'
                         OR p.nombre_proveedor LIKE '%' + ? + '%'
                         OR u.nombre_completo LIKE '%' + ? + '%'
+                        OR EXISTS
+                        (
+                            SELECT 1
+                            FROM dbo.detalle_compra AS dcf
+                            INNER JOIN dbo.productos AS prf
+                                ON prf.id_producto = dcf.id_producto
+                            WHERE dcf.id_compra = c.id_compra
+                              AND
+                              (
+                                  prf.codigo LIKE '%' + ? + '%'
+                                  OR prf.nombre LIKE '%' + ? + '%'
+                              )
+                        )
                     )
                     AND (? IS NULL OR c.fecha_compra >= ?)
                     AND (? IS NULL OR c.fecha_compra < DATEADD(DAY, 1, ?))
@@ -239,20 +273,29 @@ public class CompraDAO {
             sentencia.setString(2, texto);
             sentencia.setString(3, texto);
             sentencia.setString(4, texto);
-            establecerFecha(sentencia, 5, 6, fechaDesde);
-            establecerFecha(sentencia, 7, 8, fechaHasta);
+            sentencia.setString(5, texto);
+            sentencia.setString(6, texto);
+            establecerFecha(sentencia, 7, 8, fechaDesde);
+            establecerFecha(sentencia, 9, 10, fechaHasta);
 
             if (estadoFiltro == null) {
-                sentencia.setNull(9, Types.VARCHAR);
-                sentencia.setNull(10, Types.VARCHAR);
+                sentencia.setNull(11, Types.VARCHAR);
+                sentencia.setNull(12, Types.VARCHAR);
             } else {
-                sentencia.setString(9, estadoFiltro);
-                sentencia.setString(10, estadoFiltro);
+                sentencia.setString(11, estadoFiltro);
+                sentencia.setString(12, estadoFiltro);
             }
 
             try (ResultSet resultado = sentencia.executeQuery()) {
                 while (resultado.next()) {
-                    compras.add(mapearCompra(resultado));
+                    Compra compra = mapearCompra(resultado);
+                    compra.setResumenProductos(
+                            resultado.getString("detalle_resumen")
+                    );
+                    compra.setUnidadesHistorial(
+                            resultado.getInt("unidades_totales")
+                    );
+                    compras.add(compra);
                 }
             }
         }

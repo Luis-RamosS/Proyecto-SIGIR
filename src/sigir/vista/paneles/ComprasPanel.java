@@ -31,6 +31,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import sigir.componentes.BuscadorSugerencias;
 import sigir.controlador.CompraControlador;
+import sigir.modelo.Categoria;
 import sigir.modelo.Compra;
 import sigir.modelo.DetalleCompra;
 import sigir.modelo.Producto;
@@ -56,6 +57,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     private Proveedor proveedorSeleccionado;
     private BuscadorSugerencias<Proveedor> buscadorProveedores;
     private boolean iniciado;
+    private Runnable solicitarNuevoProductoListener;
 
     public ComprasPanel() {
         initComponents();
@@ -281,6 +283,7 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         javax.swing.JButton[] primarios = {
             btnBuscarProducto,
+            btnNuevoProducto,
             btnAgregarProducto,
             btnGuardarCompra
         };
@@ -379,6 +382,10 @@ public class ComprasPanel extends javax.swing.JPanel {
                 e -> controlador.buscarProductoAvanzado()
         );
 
+        btnNuevoProducto.addActionListener(
+                e -> solicitarRegistroProductoNuevo()
+        );
+
         btnAgregarProducto.addActionListener(
                 e -> controlador.agregarProducto()
         );
@@ -412,6 +419,45 @@ public class ComprasPanel extends javax.swing.JPanel {
                 controlador.buscarCompras();
             }
         });
+    }
+
+    public void setSolicitarNuevoProductoListener(
+            Runnable listener) {
+
+        this.solicitarNuevoProductoListener =
+                listener;
+    }
+
+    private void solicitarRegistroProductoNuevo() {
+        if (solicitarNuevoProductoListener != null) {
+            solicitarNuevoProductoListener.run();
+            return;
+        }
+
+        JOptionPane.showMessageDialog(
+                this,
+                "No fue posible abrir el módulo de Productos "
+                + "desde esta ventana.",
+                "Productos",
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    public void prepararProductoRegistradoDesdeProductos(
+            Producto producto) {
+
+        if (producto == null
+                || producto.getIdProducto() <= 0) {
+
+            return;
+        }
+
+        controlador.usarProductoRegistrado(
+                producto
+        );
+
+        tabsCompras.setSelectedIndex(0);
+        txtCantidad.requestFocusInWindow();
     }
 
     public void prepararNuevaCompraParaProveedor(
@@ -493,6 +539,285 @@ public class ComprasPanel extends javax.swing.JPanel {
                         ? ""
                         : texto(producto.getNombre())
         );
+    }
+
+    public Producto solicitarNuevoProducto(
+            List<Categoria> categorias) {
+
+        if (categorias == null || categorias.isEmpty()) {
+            return null;
+        }
+
+        javax.swing.JTextField txtCodigo =
+                new javax.swing.JTextField(18);
+        javax.swing.JTextField txtNombre =
+                new javax.swing.JTextField(24);
+        javax.swing.JComboBox<Categoria> cmbCategoria =
+                new javax.swing.JComboBox<>(
+                        categorias.toArray(Categoria[]::new)
+                );
+        javax.swing.JTextField txtMarca =
+                new javax.swing.JTextField(18);
+        javax.swing.JTextField txtModelo =
+                new javax.swing.JTextField(18);
+        javax.swing.JTextField txtPrecioCompra =
+                new javax.swing.JTextField("0.00", 12);
+        javax.swing.JTextField txtPrecioVenta =
+                new javax.swing.JTextField("0.00", 12);
+        javax.swing.JTextField txtStockMinimo =
+                new javax.swing.JTextField("0", 8);
+        javax.swing.JCheckBox chkSerie =
+                new javax.swing.JCheckBox(
+                        "Maneja número de serie"
+                );
+        javax.swing.JTextArea txtDescripcion =
+                new javax.swing.JTextArea(3, 24);
+
+        txtDescripcion.setLineWrap(true);
+        txtDescripcion.setWrapStyleWord(true);
+
+        CampoSeleccionUtil.seleccionarTodoAlEnfocar(
+                txtPrecioCompra,
+                txtPrecioVenta,
+                txtStockMinimo
+        );
+
+        javax.swing.JPanel formulario =
+                new javax.swing.JPanel(
+                        new java.awt.GridBagLayout()
+                );
+
+        java.awt.GridBagConstraints g =
+                new java.awt.GridBagConstraints();
+        g.insets = new java.awt.Insets(4, 6, 4, 6);
+        g.anchor = java.awt.GridBagConstraints.WEST;
+        g.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        g.weightx = 0;
+
+        int fila = 0;
+
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Código *", txtCodigo
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Nombre *", txtNombre
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Categoría *", cmbCategoria
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Marca", txtMarca
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Modelo", txtModelo
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Precio compra", txtPrecioCompra
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Precio venta", txtPrecioVenta
+        );
+        agregarCampoProductoNuevo(
+                formulario, g, fila++,
+                "Stock mínimo", txtStockMinimo
+        );
+
+        g.gridx = 0;
+        g.gridy = fila;
+        g.gridwidth = 2;
+        g.weightx = 1;
+        formulario.add(chkSerie, g);
+        fila++;
+
+        g.gridx = 0;
+        g.gridy = fila;
+        g.gridwidth = 1;
+        g.weightx = 0;
+        formulario.add(
+                new javax.swing.JLabel("Descripción"),
+                g
+        );
+
+        g.gridx = 1;
+        g.weightx = 1;
+        formulario.add(
+                new javax.swing.JScrollPane(txtDescripcion),
+                g
+        );
+        fila++;
+
+        javax.swing.JLabel nota =
+                new javax.swing.JLabel(
+                        "El stock inicia en 0 y aumenta al guardar la compra."
+                );
+        nota.setForeground(new Color(98, 124, 159));
+
+        g.gridx = 0;
+        g.gridy = fila;
+        g.gridwidth = 2;
+        g.weightx = 1;
+        formulario.add(nota, g);
+
+        while (true) {
+            int respuesta = JOptionPane.showConfirmDialog(
+                    this,
+                    formulario,
+                    "Registrar producto nuevo desde Compras",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (respuesta != JOptionPane.OK_OPTION) {
+                return null;
+            }
+
+            try {
+                Categoria categoria =
+                        (Categoria) cmbCategoria
+                                .getSelectedItem();
+
+                Producto producto = new Producto();
+                producto.setCodigo(
+                        txtCodigo.getText().trim()
+                );
+                producto.setNombre(
+                        txtNombre.getText().trim()
+                );
+                producto.setIdCategoria(
+                        categoria == null
+                                ? 0
+                                : categoria.getIdCategoria()
+                );
+                producto.setNombreCategoria(
+                        categoria == null
+                                ? ""
+                                : categoria.getNombre()
+                );
+                producto.setMarca(
+                        textoOpcional(txtMarca.getText())
+                );
+                producto.setModelo(
+                        textoOpcional(txtModelo.getText())
+                );
+                producto.setDescripcion(
+                        textoOpcional(txtDescripcion.getText())
+                );
+                producto.setPrecioCompra(
+                        decimalProductoNuevo(
+                                txtPrecioCompra.getText(),
+                                "precio de compra"
+                        )
+                );
+                producto.setPrecioVenta(
+                        decimalProductoNuevo(
+                                txtPrecioVenta.getText(),
+                                "precio de venta"
+                        )
+                );
+                producto.setStockMinimo(
+                        enteroProductoNuevo(
+                                txtStockMinimo.getText(),
+                                "stock mínimo"
+                        )
+                );
+                producto.setManejaNumeroSerie(
+                        chkSerie.isSelected()
+                );
+                producto.setStockActual(0);
+                producto.setEstado("AGOTADO");
+
+                return producto;
+
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        ex.getMessage(),
+                        "Datos del producto",
+                        JOptionPane.WARNING_MESSAGE
+                );
+            }
+        }
+    }
+
+    private void agregarCampoProductoNuevo(
+            javax.swing.JPanel panel,
+            java.awt.GridBagConstraints g,
+            int fila,
+            String etiqueta,
+            java.awt.Component campo) {
+
+        g.gridx = 0;
+        g.gridy = fila;
+        g.gridwidth = 1;
+        g.weightx = 0;
+        panel.add(
+                new javax.swing.JLabel(etiqueta),
+                g
+        );
+
+        g.gridx = 1;
+        g.weightx = 1;
+        panel.add(campo, g);
+    }
+
+    private BigDecimal decimalProductoNuevo(
+            String texto,
+            String nombreCampo) {
+
+        try {
+            BigDecimal valor = new BigDecimal(
+                    texto == null || texto.isBlank()
+                            ? "0"
+                            : texto.trim().replace(",", ".")
+            );
+
+            if (valor.compareTo(BigDecimal.ZERO) < 0) {
+                throw new NumberFormatException();
+            }
+
+            return valor.setScale(
+                    2,
+                    RoundingMode.HALF_UP
+            );
+
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "El " + nombreCampo
+                    + " debe ser un valor válido mayor o igual a 0."
+            );
+        }
+    }
+
+    private int enteroProductoNuevo(
+            String texto,
+            String nombreCampo) {
+
+        try {
+            int valor = Integer.parseInt(
+                    texto == null || texto.isBlank()
+                            ? "0"
+                            : texto.trim()
+            );
+
+            if (valor < 0) {
+                throw new NumberFormatException();
+            }
+
+            return valor;
+
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "El " + nombreCampo
+                    + " debe ser un número entero mayor o igual a 0."
+            );
+        }
     }
 
     public Proveedor getProveedorSeleccionado() {
@@ -799,6 +1124,7 @@ public class ComprasPanel extends javax.swing.JPanel {
 
         btnGuardarCompra.setEnabled(!procesando);
         btnBuscarProducto.setEnabled(!procesando);
+        btnNuevoProducto.setEnabled(!procesando);
         btnAgregarProducto.setEnabled(!procesando);
         btnQuitarProducto.setEnabled(!procesando);
         btnNuevaCompra.setEnabled(!procesando);
@@ -850,6 +1176,8 @@ public class ComprasPanel extends javax.swing.JPanel {
                             "Documento",
                             "Fecha",
                             "Proveedor",
+                            "Productos comprados",
+                            "Unidades",
                             "Usuario",
                             "Pago",
                             "Total",
@@ -882,6 +1210,8 @@ public class ComprasPanel extends javax.swing.JPanel {
                         : compra.getFechaCompra()
                                 .format(fechaHora),
                 compra.getNombreProveedor(),
+                compra.getResumenProductos(),
+                compra.getUnidadesHistorial(),
                 compra.getNombreUsuario(),
                 compra.getTipoPago(),
                 formatearMoneda(
@@ -1196,6 +1526,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         lblProducto = new javax.swing.JLabel();
         txtNombreProducto = new javax.swing.JTextField();
         btnBuscarProducto = new javax.swing.JButton();
+        btnNuevoProducto = new javax.swing.JButton();
         lblCantidad = new javax.swing.JLabel();
         txtCantidad = new javax.swing.JTextField();
         lblCosto = new javax.swing.JLabel();
@@ -1240,13 +1571,13 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlEncabezado.setBackground(new java.awt.Color(247, 249, 252));
         pnlEncabezado.setLayout(null);
 
-        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28));
+        lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
         lblTitulo.setForeground(new java.awt.Color(24, 50, 87));
         lblTitulo.setText("Registro de Compras");
         pnlEncabezado.add(lblTitulo);
         lblTitulo.setBounds(0, 4, 390, 40);
 
-        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14));
+        lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         lblSubtitulo.setForeground(new java.awt.Color(98, 124, 159));
         lblSubtitulo.setText("Registra compras usando una búsqueda avanzada de productos.");
         pnlEncabezado.add(lblSubtitulo);
@@ -1255,7 +1586,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         add(pnlEncabezado);
         pnlEncabezado.setBounds(28, 12, 1110, 76);
 
-        tabsCompras.setFont(new java.awt.Font("Segoe UI", 1, 13));
+        tabsCompras.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
 
         pnlNuevaCompra.setBackground(new java.awt.Color(247, 249, 252));
         pnlNuevaCompra.setLayout(null);
@@ -1263,53 +1594,48 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlDatosCompra.setBackground(new java.awt.Color(255, 255, 255));
         pnlDatosCompra.setLayout(null);
 
-        lblTituloDatos.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloDatos.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloDatos.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloDatos.setText("Información de la compra");
         pnlDatosCompra.add(lblTituloDatos);
         lblTituloDatos.setBounds(16, 8, 260, 26);
 
-        lblProveedor.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblProveedor.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblProveedor.setText("Buscar proveedor");
         pnlDatosCompra.add(lblProveedor);
-        lblProveedor.setBounds(16, 38, 120, 16);
-
+        lblProveedor.setBounds(16, 38, 150, 16);
         pnlDatosCompra.add(txtBuscarProveedor);
         txtBuscarProveedor.setBounds(16, 56, 310, 36);
 
-        lblDocumento.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblDocumento.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblDocumento.setText("Documento del proveedor");
         pnlDatosCompra.add(lblDocumento);
         lblDocumento.setBounds(338, 38, 180, 16);
-
         pnlDatosCompra.add(txtNumeroDocumento);
         txtNumeroDocumento.setBounds(338, 56, 220, 36);
 
-        lblFecha.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblFecha.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblFecha.setText("Fecha");
         pnlDatosCompra.add(lblFecha);
         lblFecha.setBounds(570, 38, 100, 16);
-
         pnlDatosCompra.add(txtFechaCompra);
         txtFechaCompra.setBounds(570, 56, 150, 36);
 
-        lblTipoPago.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblTipoPago.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblTipoPago.setText("Tipo de pago");
         pnlDatosCompra.add(lblTipoPago);
         lblTipoPago.setBounds(732, 38, 110, 16);
-
         pnlDatosCompra.add(cmbTipoPago);
         cmbTipoPago.setBounds(732, 56, 140, 36);
 
-        lblUsuario.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblUsuario.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblUsuario.setText("Usuario responsable");
         pnlDatosCompra.add(lblUsuario);
         lblUsuario.setBounds(884, 38, 150, 16);
-
         pnlDatosCompra.add(txtUsuario);
         txtUsuario.setBounds(884, 56, 149, 36);
 
-        lblObservaciones.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblObservaciones.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblObservaciones.setText("Observaciones");
         pnlDatosCompra.add(lblObservaciones);
         lblObservaciones.setBounds(16, 104, 150, 16);
@@ -1329,44 +1655,46 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlAgregarProducto.setBackground(new java.awt.Color(255, 255, 255));
         pnlAgregarProducto.setLayout(null);
 
-        lblTituloAgregar.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloAgregar.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloAgregar.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloAgregar.setText("Agregar producto");
         pnlAgregarProducto.add(lblTituloAgregar);
         lblTituloAgregar.setBounds(16, 8, 210, 26);
 
-        lblCodigoProducto.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblCodigoProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblCodigoProducto.setText("Código");
         pnlAgregarProducto.add(lblCodigoProducto);
         lblCodigoProducto.setBounds(16, 40, 80, 16);
-
         pnlAgregarProducto.add(txtCodigoProducto);
         txtCodigoProducto.setBounds(16, 58, 110, 36);
 
-        lblProducto.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblProducto.setText("Producto seleccionado");
         pnlAgregarProducto.add(lblProducto);
         lblProducto.setBounds(138, 40, 160, 16);
-
         pnlAgregarProducto.add(txtNombreProducto);
         txtNombreProducto.setBounds(138, 58, 290, 36);
 
-        btnBuscarProducto.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnBuscarProducto.setText("Búsqueda avanzada");
+        btnBuscarProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
+        btnBuscarProducto.setText("Producto existente");
         pnlAgregarProducto.add(btnBuscarProducto);
         btnBuscarProducto.setBounds(440, 52, 150, 42);
 
-        lblCantidad.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnNuevoProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
+        btnNuevoProducto.setText("+ Producto nuevo");
+        pnlAgregarProducto.add(btnNuevoProducto);
+        btnNuevoProducto.setBounds(440, 101, 150, 34);
+
+        lblCantidad.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblCantidad.setText("Cantidad");
         pnlAgregarProducto.add(lblCantidad);
         lblCantidad.setBounds(602, 40, 75, 16);
 
-        txtCantidad.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txtCantidad.setText("1");
         pnlAgregarProducto.add(txtCantidad);
         txtCantidad.setBounds(602, 58, 70, 36);
 
-        lblCosto.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblCosto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblCosto.setText("Costo de compra");
         pnlAgregarProducto.add(lblCosto);
         lblCosto.setBounds(684, 40, 120, 16);
@@ -1375,77 +1703,67 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlAgregarProducto.add(txtCostoUnitario);
         txtCostoUnitario.setBounds(684, 58, 120, 36);
 
-        lblStockProducto.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblStockProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblStockProducto.setText("Stock actual");
         pnlAgregarProducto.add(lblStockProducto);
         lblStockProducto.setBounds(816, 40, 90, 16);
 
-        txtStockProducto.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         txtStockProducto.setText("0");
         pnlAgregarProducto.add(txtStockProducto);
         txtStockProducto.setBounds(816, 58, 70, 36);
 
-        btnAgregarProducto.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnAgregarProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnAgregarProducto.setText("+ Agregar");
         pnlAgregarProducto.add(btnAgregarProducto);
         btnAgregarProducto.setBounds(898, 52, 135, 42);
 
-        lblAvisoSeries.setFont(new java.awt.Font("Segoe UI", 0, 10));
-        lblAvisoSeries.setText("Usa Búsqueda avanzada para seleccionar el producto.");
+        lblAvisoSeries.setFont(new java.awt.Font("Segoe UI", 0, 10)); // NOI18N
+        lblAvisoSeries.setText("Selecciona un producto existente o registra uno nuevo sin salir de Compras.");
         pnlAgregarProducto.add(lblAvisoSeries);
-        lblAvisoSeries.setBounds(16, 103, 870, 20);
+        lblAvisoSeries.setBounds(602, 103, 431, 20);
 
         pnlNuevaCompra.add(pnlAgregarProducto);
-        pnlAgregarProducto.setBounds(0, 225, 1049, 135);
+        pnlAgregarProducto.setBounds(0, 225, 1049, 145);
 
         pnlDetalleCompra.setBackground(new java.awt.Color(255, 255, 255));
         pnlDetalleCompra.setLayout(null);
 
-        lblTituloDetalle.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloDetalle.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloDetalle.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloDetalle.setText("Detalle de productos");
         pnlDetalleCompra.add(lblTituloDetalle);
         lblTituloDetalle.setBounds(16, 8, 230, 26);
 
-        lblCantidadProductos.setFont(new java.awt.Font("Segoe UI", 0, 11));
+        lblCantidadProductos.setFont(new java.awt.Font("Segoe UI", 0, 11)); // NOI18N
         lblCantidadProductos.setForeground(new java.awt.Color(98, 124, 159));
-        lblCantidadProductos.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         lblCantidadProductos.setText("0 productos agregados");
         pnlDetalleCompra.add(lblCantidadProductos);
         lblCantidadProductos.setBounds(750, 10, 280, 22);
 
-        tblDetalle.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "Código", "Producto", "Cantidad", "Costo unitario", "Subtotal", "Series"
-            }
-        ));
         scrollDetalle.setViewportView(tblDetalle);
 
         pnlDetalleCompra.add(scrollDetalle);
         scrollDetalle.setBounds(0, 40, 1049, 160);
 
-        btnQuitarProducto.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnQuitarProducto.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnQuitarProducto.setText("Quitar producto");
         pnlDetalleCompra.add(btnQuitarProducto);
         btnQuitarProducto.setBounds(16, 210, 150, 38);
 
-        btnNuevaCompra.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnNuevaCompra.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnNuevaCompra.setText("Nueva compra");
         pnlDetalleCompra.add(btnNuevaCompra);
         btnNuevaCompra.setBounds(697, 210, 145, 38);
 
-        btnGuardarCompra.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnGuardarCompra.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnGuardarCompra.setText("Guardar compra");
         pnlDetalleCompra.add(btnGuardarCompra);
         btnGuardarCompra.setBounds(854, 210, 177, 38);
 
         pnlNuevaCompra.add(pnlDetalleCompra);
-        pnlDetalleCompra.setBounds(0, 372, 1049, 260);
+        pnlDetalleCompra.setBounds(0, 382, 1049, 260);
 
-        tabsCompras.addTab("Nueva compra", pnlNuevaCompra);
+        tabsCompras.addTab("tab1", pnlNuevaCompra);
 
         pnlHistorial.setBackground(new java.awt.Color(247, 249, 252));
         pnlHistorial.setLayout(null);
@@ -1453,45 +1771,41 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlFiltrosHistorial.setBackground(new java.awt.Color(255, 255, 255));
         pnlFiltrosHistorial.setLayout(null);
 
-        lblTituloFiltros.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloFiltros.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloFiltros.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloFiltros.setText("Filtros de compras");
         pnlFiltrosHistorial.add(lblTituloFiltros);
         lblTituloFiltros.setBounds(16, 8, 220, 26);
 
-        lblBuscarHistorial.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        lblBuscarHistorial.setText("Documento, proveedor o usuario");
+        lblBuscarHistorial.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
+        lblBuscarHistorial.setText("Documento, proveedor, usuario o producto");
         pnlFiltrosHistorial.add(lblBuscarHistorial);
         lblBuscarHistorial.setBounds(16, 40, 230, 16);
-
         pnlFiltrosHistorial.add(txtBuscarHistorial);
         txtBuscarHistorial.setBounds(16, 58, 250, 36);
 
-        lblDesde.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblDesde.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblDesde.setText("Desde");
         pnlFiltrosHistorial.add(lblDesde);
         lblDesde.setBounds(280, 40, 90, 16);
-
         pnlFiltrosHistorial.add(txtFechaDesde);
         txtFechaDesde.setBounds(280, 58, 140, 36);
 
-        lblHasta.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblHasta.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblHasta.setText("Hasta");
         pnlFiltrosHistorial.add(lblHasta);
         lblHasta.setBounds(434, 40, 90, 16);
-
         pnlFiltrosHistorial.add(txtFechaHasta);
         txtFechaHasta.setBounds(434, 58, 140, 36);
 
-        lblEstadoHistorial.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        lblEstadoHistorial.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblEstadoHistorial.setText("Estado");
         pnlFiltrosHistorial.add(lblEstadoHistorial);
         lblEstadoHistorial.setBounds(588, 40, 90, 16);
-
         pnlFiltrosHistorial.add(cmbEstadoHistorial);
         cmbEstadoHistorial.setBounds(588, 58, 170, 36);
 
-        btnActualizarHistorial.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnActualizarHistorial.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnActualizarHistorial.setText("Actualizar");
         pnlFiltrosHistorial.add(btnActualizarHistorial);
         btnActualizarHistorial.setBounds(772, 58, 130, 36);
@@ -1502,37 +1816,29 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlTablaHistorial.setBackground(new java.awt.Color(255, 255, 255));
         pnlTablaHistorial.setLayout(null);
 
-        lblTituloTablaHistorial.setFont(new java.awt.Font("Segoe UI", 1, 16));
+        lblTituloTablaHistorial.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         lblTituloTablaHistorial.setForeground(new java.awt.Color(24, 50, 87));
         lblTituloTablaHistorial.setText("Historial de compras");
         pnlTablaHistorial.add(lblTituloTablaHistorial);
         lblTituloTablaHistorial.setBounds(16, 8, 240, 26);
 
-        tblHistorial.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "ID", "Documento", "Fecha", "Proveedor", "Usuario", "Pago", "Total", "Estado"
-            }
-        ));
         scrollHistorial.setViewportView(tblHistorial);
 
         pnlTablaHistorial.add(scrollHistorial);
         scrollHistorial.setBounds(0, 40, 1049, 430);
 
-        lblCantidadHistorial.setFont(new java.awt.Font("Segoe UI", 0, 11));
+        lblCantidadHistorial.setFont(new java.awt.Font("Segoe UI", 0, 11)); // NOI18N
         lblCantidadHistorial.setForeground(new java.awt.Color(98, 124, 159));
         lblCantidadHistorial.setText("Mostrando 0 compras");
         pnlTablaHistorial.add(lblCantidadHistorial);
         lblCantidadHistorial.setBounds(16, 478, 250, 22);
 
-        btnVerDetalle.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnVerDetalle.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnVerDetalle.setText("Ver detalle");
         pnlTablaHistorial.add(btnVerDetalle);
         btnVerDetalle.setBounds(748, 474, 120, 36);
 
-        btnAnularCompra.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnAnularCompra.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         btnAnularCompra.setText("Anular compra");
         pnlTablaHistorial.add(btnAnularCompra);
         btnAnularCompra.setBounds(880, 474, 150, 36);
@@ -1540,7 +1846,7 @@ public class ComprasPanel extends javax.swing.JPanel {
         pnlHistorial.add(pnlTablaHistorial);
         pnlTablaHistorial.setBounds(0, 130, 1049, 520);
 
-        tabsCompras.addTab("Historial", pnlHistorial);
+        tabsCompras.addTab("tab2", pnlHistorial);
 
         add(tabsCompras);
         tabsCompras.setBounds(28, 88, 1070, 680);
@@ -1553,6 +1859,7 @@ public class ComprasPanel extends javax.swing.JPanel {
     private javax.swing.JButton btnBuscarProducto;
     private javax.swing.JButton btnGuardarCompra;
     private javax.swing.JButton btnNuevaCompra;
+    private javax.swing.JButton btnNuevoProducto;
     private javax.swing.JButton btnQuitarProducto;
     private javax.swing.JButton btnVerDetalle;
     private javax.swing.JComboBox<String> cmbEstadoHistorial;

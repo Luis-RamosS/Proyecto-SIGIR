@@ -64,10 +64,10 @@ public class ProductoControlador {
         }
     }
 
-    public void nuevo() {
+    public boolean nuevo() {
         if (!confirmarDescartarCambios()) {
             restaurarSeleccionActual();
-            return;
+            return false;
         }
 
         idProductoSeleccionado = null;
@@ -76,6 +76,11 @@ public class ProductoControlador {
         vista.setModoEdicion(false);
 
         actualizarFirmaFormularioBase();
+        return true;
+    }
+
+    public boolean prepararNuevoDesdeCompras() {
+        return nuevo();
     }
 
     public void seleccionarFila() {
@@ -115,6 +120,8 @@ public class ProductoControlador {
             validar(producto);
 
             Integer idExcluir = idProductoSeleccionado;
+            boolean creando =
+                    idProductoSeleccionado == null;
 
             if (productoDAO.existeCodigo(
                     producto.getCodigo(),
@@ -131,16 +138,19 @@ public class ProductoControlador {
                 return;
             }
 
-            if (idProductoSeleccionado == null) {
+            if (creando) {
                 int idGenerado = productoDAO.insertar(producto);
                 idProductoSeleccionado = idGenerado;
+                producto.setIdProducto(idGenerado);
 
-                JOptionPane.showMessageDialog(
-                        vista,
-                        "Producto registrado correctamente.",
-                        "SIGIR",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
+                if (!vista.tieneProductoRegistradoListener()) {
+                    JOptionPane.showMessageDialog(
+                            vista,
+                            "Producto registrado correctamente.",
+                            "SIGIR",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
 
             } else {
                 producto.setIdProducto(idProductoSeleccionado);
@@ -158,6 +168,21 @@ public class ProductoControlador {
 
             buscar();
             seleccionarProductoEnTabla(idProductoSeleccionado);
+
+            if (creando) {
+                Producto productoNotificar =
+                        productos.stream()
+                                .filter(item ->
+                                        item.getIdProducto()
+                                        == idProductoSeleccionado
+                                )
+                                .findFirst()
+                                .orElse(producto);
+
+                vista.notificarProductoRegistrado(
+                        productoNotificar
+                );
+            }
 
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(

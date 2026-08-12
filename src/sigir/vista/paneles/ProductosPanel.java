@@ -8,6 +8,7 @@ import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
@@ -25,6 +26,7 @@ public class ProductosPanel extends javax.swing.JPanel {
 
     private final ProductoControlador controlador;
     private boolean iniciado;
+    private Consumer<Producto> productoRegistradoListener;
 
     private final NumberFormat formatoMoneda =
             NumberFormat.getCurrencyInstance(
@@ -52,6 +54,45 @@ public class ProductosPanel extends javax.swing.JPanel {
 
     public void recargar() {
         controlador.recargar();
+    }
+
+    public boolean prepararNuevoProductoDesdeCompras(
+            Consumer<Producto> listener) {
+
+        this.productoRegistradoListener =
+                listener;
+
+        boolean preparado =
+                controlador.prepararNuevoDesdeCompras();
+
+        if (!preparado) {
+            this.productoRegistradoListener =
+                    null;
+        }
+
+        return preparado;
+    }
+
+    public void setProductoRegistradoListener(
+            Consumer<Producto> listener) {
+
+        this.productoRegistradoListener =
+                listener;
+    }
+
+    public boolean tieneProductoRegistradoListener() {
+        return productoRegistradoListener != null;
+    }
+
+    public void notificarProductoRegistrado(
+            Producto producto) {
+
+        Consumer<Producto> listener =
+                productoRegistradoListener;
+
+        if (listener != null) {
+            listener.accept(producto);
+        }
     }
 
     private void configurarComponentes() {

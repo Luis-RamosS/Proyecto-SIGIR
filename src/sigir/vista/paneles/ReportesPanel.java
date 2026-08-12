@@ -7,6 +7,8 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -341,8 +343,46 @@ public class ReportesPanel extends javax.swing.JPanel {
                     && cmbTipoReporte.getItemCount() > 0) {
 
                 controlador.cambiarTipoReporte();
+                controlador.consultarAsync();
             }
         });
+
+        cmbEstado.addActionListener(e -> {
+            if (!actualizandoControles
+                    && cmbEstado.isEnabled()
+                    && cmbEstado.getItemCount() > 0) {
+
+                controlador.consultarAsync();
+            }
+        });
+
+        cmbUsuario.addActionListener(e -> {
+            if (!actualizandoControles
+                    && cmbUsuario.isEnabled()
+                    && cmbUsuario.getItemCount() > 0) {
+
+                controlador.consultarAsync();
+            }
+        });
+
+        txtFechaDesde.addActionListener(
+                e -> consultarPorCambioDeFecha()
+        );
+
+        txtFechaHasta.addActionListener(
+                e -> consultarPorCambioDeFecha()
+        );
+
+        FocusAdapter fechaFocus =
+                new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                consultarPorCambioDeFecha();
+            }
+        };
+
+        txtFechaDesde.addFocusListener(fechaFocus);
+        txtFechaHasta.addFocusListener(fechaFocus);
 
         btnConsultar.addActionListener(
                 e -> controlador.consultarAsync()
@@ -355,6 +395,21 @@ public class ReportesPanel extends javax.swing.JPanel {
         btnImprimir.addActionListener(
                 e -> controlador.imprimir()
         );
+    }
+
+    private void consultarPorCambioDeFecha() {
+        if (actualizandoControles) {
+            return;
+        }
+
+        TipoReporte tipo =
+                getTipoReporteSeleccionado();
+
+        if (tipo != null
+                && tipo.isUsaFechas()) {
+
+            controlador.consultarAsync();
+        }
     }
 
     public void cargarTiposReporte(
@@ -481,81 +536,102 @@ public class ReportesPanel extends javax.swing.JPanel {
     public void configurarFiltros(
             TipoReporte tipo) {
 
-        txtDescripcionReporte.setText(
-                tipo.getDescripcion()
-        );
+        actualizandoControles = true;
 
-        txtFechaDesde.setEnabled(
-                tipo.isUsaFechas()
-        );
+        try {
+            txtDescripcionReporte.setText(
+                    tipo.getDescripcion()
+            );
 
-        txtFechaHasta.setEnabled(
-                tipo.isUsaFechas()
-        );
+            txtFechaDesde.setEnabled(
+                    tipo.isUsaFechas()
+            );
 
-        cmbEstado.setEnabled(
-                tipo.isUsaEstado()
-        );
+            txtFechaHasta.setEnabled(
+                    tipo.isUsaFechas()
+            );
 
-        cmbUsuario.setEnabled(
-                tipo.isUsaUsuario()
-        );
+            cmbEstado.setEnabled(
+                    tipo.isUsaEstado()
+            );
 
-        String[] estados = switch (tipo) {
-            case VENTAS ->
-                new String[]{
-                    "TODOS",
-                    "COMPLETADA",
-                    "ANULADA",
-                    "PENDIENTE"
-                };
+            cmbUsuario.setEnabled(
+                    tipo.isUsaUsuario()
+            );
 
-            case COMPRAS ->
-                new String[]{
-                    "TODOS",
-                    "REGISTRADA",
-                    "ANULADA",
-                    "PENDIENTE"
-                };
+            String[] estados = switch (tipo) {
+                case VENTAS ->
+                    new String[]{
+                        "TODOS",
+                        "COMPLETADA",
+                        "ANULADA",
+                        "PENDIENTE"
+                    };
 
-            case MOVIMIENTOS ->
-                new String[]{
-                    "TODOS",
-                    "ENTRADA_COMPRA",
-                    "SALIDA_VENTA",
-                    "SALIDA_REPARACION",
-                    "DEVOLUCION_CLIENTE",
-                    "AJUSTE_ENTRADA",
-                    "AJUSTE_SALIDA"
-                };
+                case COMPRAS ->
+                    new String[]{
+                        "TODOS",
+                        "REGISTRADA",
+                        "ANULADA",
+                        "PENDIENTE"
+                    };
 
-            case CREDITOS ->
-                new String[]{
-                    "TODOS",
-                    "PENDIENTE",
-                    "VENCIDO",
-                    "PAGADO",
-                    "ANULADO"
-                };
+                case MOVIMIENTOS ->
+                    new String[]{
+                        "TODOS",
+                        "ENTRADA_COMPRA",
+                        "SALIDA_VENTA",
+                        "SALIDA_REPARACION",
+                        "DEVOLUCION_CLIENTE",
+                        "AJUSTE_ENTRADA",
+                        "AJUSTE_SALIDA"
+                    };
 
-            case REPARACIONES ->
-                new String[]{
-                    "TODOS",
-                    "RECIBIDO",
-                    "DIAGNOSTICO",
-                    "EN_REPARACION",
-                    "LISTO",
-                    "ENTREGADO",
-                    "CANCELADO"
-                };
+                case CREDITOS ->
+                    new String[]{
+                        "TODOS",
+                        "PENDIENTE",
+                        "VENCIDO",
+                        "PAGADO",
+                        "ANULADO"
+                    };
 
-            default ->
-                new String[]{"TODOS"};
-        };
+                case REPARACIONES ->
+                    new String[]{
+                        "TODOS",
+                        "RECIBIDO",
+                        "DIAGNOSTICO",
+                        "EN_REPARACION",
+                        "LISTO",
+                        "ENTREGADO",
+                        "CANCELADO"
+                    };
 
-        cmbEstado.setModel(
-                new DefaultComboBoxModel<>(estados)
-        );
+                case CAJA_CHICA ->
+                    new String[]{
+                        "TODOS",
+                        "APERTURA",
+                        "EGRESO",
+                        "REPOSICION",
+                        "AJUSTE_ENTRADA",
+                        "AJUSTE_SALIDA",
+                        "ACTIVOS",
+                        "ANULADOS"
+                    };
+
+                default ->
+                    new String[]{"TODOS"};
+            };
+
+            cmbEstado.setModel(
+                    new DefaultComboBoxModel<>(
+                            estados
+                    )
+            );
+
+        } finally {
+            actualizandoControles = false;
+        }
     }
 
     public void mostrarResumen(
@@ -863,7 +939,7 @@ public class ReportesPanel extends javax.swing.JPanel {
         pnlFiltros.add(txtDescripcionReporte);
         txtDescripcionReporte.setBounds(16, 74, 671, 32);
 
-        btnConsultar.setText("Consultar");
+        btnConsultar.setText("Actualizar");
         pnlFiltros.add(btnConsultar);
         btnConsultar.setBounds(699, 74, 105, 34);
 
